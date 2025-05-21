@@ -8,8 +8,12 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
-    watch: {
-      usePolling: true,
+    proxy: {
+      '/routes': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/routes/, '/routes'),
+      },
     },
   },
 })
