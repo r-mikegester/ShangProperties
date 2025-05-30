@@ -6,7 +6,7 @@ import "lenis/dist/lenis.css";
 
 import Footer from "../components/Footer";
 import Contact from "../components/Contact";
-import Card from "../components/Card";
+// import Card from "../components/Card";
 import Hero from "../components/Hero";
 import projects from "../lib/data/featuredProjects";
 
@@ -44,7 +44,7 @@ const Home = () => {
                 <h2 className="text-5xl font-semibold text-center md:text-left text-[#b08b2e] mb-8 castoro-titling-regular">
                     Featured Projects
                 </h2>
-                <Card projects={projects} />
+                {/* <Card projects={projects} /> */}
             </section>
             <section
                 id="contact"

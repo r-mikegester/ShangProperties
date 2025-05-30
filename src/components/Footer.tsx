@@ -17,58 +17,16 @@ const Footer = () => {
                             Metro Manila 1550,
                             Philippines
                         </pre>
-                    </a> 
+                    </a>
                     <img className="mt-3 w-40" src={kuok} />
                 </div>
                 {/* End Col */}
 
-                <div className="ml-10">
-                    <h4 className="text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">About US</h4>
 
-                    <div className="mt-3 grid space-y-3 text-sm">
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Our Brand</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Corporate Governance</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Disclosures</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Careers</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Investors</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Kerry Foundation Phils, Inc.</a></p>
-                    </div>
-                </div>
-                {/* End Col */}
 
-                <div>
-                    <h4 className="text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">Businesses</h4>
 
-                    <div className="mt-3 grid space-y-3 text-sm">
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Residential</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Malls</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Offices</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Property Management</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Hospitality</a></p>
 
-                    </div>
-                </div>
-                {/* End Col */}
 
-                <div>
-                    <h4 className="text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">Curated Spaces</h4>
-
-                    <div className="mt-3 grid space-y-3 text-sm">
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Amenities</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Lifestyle</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Security & Connectivity</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Wellness</a></p>
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Show Suite Units</a></p>
-
-                    </div>
-
-                    <h4 className="mt-7 text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">News & Updates</h4>
-
-                    <div className="mt-3 grid space-y-3 text-sm">
-                        <p><a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href="#">Journals</a></p>
-                    </div>
-                </div>
-                {/* End Col */}
 
                 <div>
                     <h4 className="text-xs font-semibold text-gray-900 uppercase dark:text-neutral-100">New Developements</h4>

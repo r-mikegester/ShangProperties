@@ -9,7 +9,7 @@ const App = () => {
     <>
       {/* 🧭 Global navigation, header, footer can go here */}
       <Navbar />
-      <main className="h-auto  bg-white text-[#1A1A1A]">
+      <main className="h-screen text-[#1A1A1A]">
         <Outlet />
       </main>
 

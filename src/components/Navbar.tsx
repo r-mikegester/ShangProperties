@@ -1,7 +1,7 @@
 // src/components/Navbar.tsx
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import navlogo from "../assets/imgs/ShangLogoVerticalWhite.webp";
+import navlogo from "../assets/imgs/logo/ShangPureWhite.png";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
