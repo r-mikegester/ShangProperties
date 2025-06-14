@@ -25,6 +25,32 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html, body {
+  background-color: #fff !important;
+}
+
+/* Themed Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  background: #686058;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b08b2e;
+  border-radius: 6px;
+  border: 3px solid #f5f5f5;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8a6c1d;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b08b2e #f5f5f5;
+}
+
 /* a {
   font-weight: 500;
   color: #646cff;
