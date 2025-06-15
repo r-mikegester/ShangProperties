@@ -1,14 +1,17 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./lib/styles/App.css";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/common/Navbar";
+import ScrollToTop from "./components/ScrollToTop";
 
 const App = () => {
+  const location = useLocation();
   return (
     <>
+      <ScrollToTop />
       {/* 🧭 Global navigation, header, footer can go here */}
-      <Navbar />
+      {!location.pathname.startsWith("/dashboard") && <Navbar />}
       <main className="h-screen text-[#1A1A1A]">
         <Outlet />
       </main>

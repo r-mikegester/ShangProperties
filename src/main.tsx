@@ -4,9 +4,17 @@ import AppRoutes from "./lib/router/routes"; // 👈 import your routing setup
 import "./lib/styles/index.css";
 import { Analytics } from "@vercel/analytics/react";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <AppRoutes />
-    <Analytics />
-  </StrictMode>
-);
+if (import.meta.env.PROD) {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <AppRoutes />
+      <Analytics />
+    </StrictMode>
+  );
+} else {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <AppRoutes />
+    </StrictMode>
+  );
+}
