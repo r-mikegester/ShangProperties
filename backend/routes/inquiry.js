@@ -23,6 +23,7 @@ router.post('/', async (req, res) => {
     message,
   } = req.body;
 
+  // Only require the fields actually used
   if (!email || !firstName || !lastName || !phone || !country || !property || !inquiryType) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -42,6 +43,12 @@ router.post('/', async (req, res) => {
   try {
     await db.collection('inquiries').add(inquiryData);
 
+    // Validate SendGrid env vars
+    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_SENDER || !process.env.ADMIN_EMAIL) {
+      console.error('SendGrid environment variables missing');
+      return res.status(500).json({ error: 'Email service not configured' });
+    }
+
     const emailMsg = {
       to: process.env.ADMIN_EMAIL,
       from: process.env.SENDGRID_SENDER,
@@ -58,7 +65,12 @@ router.post('/', async (req, res) => {
       `,
     };
 
-    await sgMail.send(emailMsg);
+    try {
+      await sgMail.send(emailMsg);
+    } catch (emailErr) {
+      console.error('SendGrid error:', emailErr);
+      return res.status(500).json({ error: 'Failed to send notification email' });
+    }
 
     res.status(200).json({ message: 'Inquiry submitted successfully.' });
   } catch (err) {
