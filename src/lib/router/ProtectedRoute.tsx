@@ -1,10 +1,36 @@
-import { JSX } from "react";
-import { Navigate } from "react-router-dom";
+import React, { ReactNode, useEffect, useState } from "react";
+import LoadingScreen from "../../components/LoadingScreen";
+import { useNavigate } from "react-router-dom";
+import { auth } from "../firebase/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const isAuthenticated = localStorage.getItem("authToken"); // Example auth check
+interface ProtectedRouteProps {
+  children: ReactNode;
+  allowedEmails: string[];
+}
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedEmails }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+      if (!firebaseUser || !allowedEmails.includes(firebaseUser.email || "")) {
+        navigate("/", { replace: true });
+      }
+    });
+    return () => unsubscribe();
+  }, [allowedEmails, navigate]);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  // If user is not allowed, nothing will render due to redirect
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
