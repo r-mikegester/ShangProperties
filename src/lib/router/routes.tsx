@@ -13,7 +13,7 @@ const Laya = lazy(() => import("../../pages/client/Laya"));
 const ShangSummit = lazy(() => import("../../pages/client/ShangSummit"));
 const WackWack = lazy(() => import("../../pages/client/WackWack"));
 const Dashboard = lazy(() => import("../../pages/admin/Dashboard"));
-const Projects = lazy(() => import("../../pages/client/Projects"));
+const Projects = lazy(() => import("../../pages/admin/Projects"));
 const Inquiries = lazy(() => import("../../pages/admin/Inquiries"));
 const PageManagement = lazy(() => import("../../pages/admin/PageManagement"));
 
