@@ -46,12 +46,12 @@ const WackWack = () => {
     return (
         <>
             <div className="bg-[#686058] h-20 w-full"></div>
-            <div className="p-6 bg-gray-100">
-                <div className="max-w-[85rem]  h-full px-4 sm:px-6 lg:px-8 mx-auto">
-                    <div className="grid lg:grid-cols-3 gap-y-8 lg:gap-y-0 lg:gap-x-6">
+            <div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
+                <div className="max-w-[85rem] h-full px-2 sm:px-4 lg:px-8 mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 lg:gap-y-0 lg:gap-x-6">
                         {/* Content */}
                         <div className="lg:col-span-2">
-                            <div className="py-8 lg:pe-8">
+                            <div className="py-6 sm:py-8 lg:pe-8">
                                 <div className="space-y-5 lg:space-y-8">
                                     <a className="inline-flex items-center gap-x-1.5 text-sm text-gray-600 decoration-2 hover:underline focus:outline-hidden focus:underline" href="/">
                                         <svg className="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
@@ -135,8 +135,8 @@ const WackWack = () => {
                         {/* End Content */}
 
                         {/* Sidebar */}
-                        <div className="lg:col-span-1 lg:w-full lg:h-full lg:bg-linear-to-r lg:from-gray-50 lg:via-transparent lg:to-transparent">
-                            <div className="sticky top-0 start-0 py-8 lg:ps-8">
+                        <div className="lg:col-span-1 w-full h-full bg-white/80 lg:bg-linear-to-r lg:from-gray-50 lg:via-transparent lg:to-transparent rounded-xl lg:rounded-none shadow-sm lg:shadow-none">
+                            <div className="py-6 px-2 sm:px-0 lg:sticky lg:top-0 lg:start-0 lg:py-8 lg:ps-8">
                                 {/* Avatar Media */}
                                 <div className="group flex items-center gap-x-3 border-b border-gray-200 pb-8 mb-8">
                                     <a className="block shrink-0 focus:outline-hidden" href="#">
