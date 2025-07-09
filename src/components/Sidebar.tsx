@@ -4,6 +4,7 @@ import { cn } from "../lib/utils/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Icon } from "@iconify/react";
+import { Link } from "react-router-dom";
 
 interface Links {
   label: string;
@@ -164,8 +165,8 @@ export const SidebarLink = ({
 }) => {
   const { open, animate } = useSidebar();
   return (
-    <a
-      href={link.href}
+    <Link
+      to={link.href}
       onClick={onClick}
       className={cn(
         "flex items-center justify-start gap-2 group/sidebar p-2 rounded-lg rounded-l-none",
@@ -184,6 +185,6 @@ export const SidebarLink = ({
       >
         {link.label}
       </motion.span>
-    </a>
+    </Link>
   );
 };
