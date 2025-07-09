@@ -1,4 +1,4 @@
-import logo from "../../assets/imgs/logo/shang/ShangPureWhite.png";
+import logo from "../../assets/imgs/logo/shang/ShangPureWhite.webp";
 import seal from "../../assets/imgs/logo/others/SPI-DPO-CORSeal-2025-2-1.png.webp";
 import kuok from "../../assets/imgs/logo/others/KuokGroup-Logo.webp";
 import { Icon } from "@iconify/react";

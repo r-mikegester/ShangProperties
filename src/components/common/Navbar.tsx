@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import whiteLogo from "../../assets/imgs/logo/shang/ShangPureWhite.png";
-import darkLogo from "../../assets/imgs/logo/shang/ShangGray.png";
+import whiteLogo from "../../assets/imgs/logo/shang/ShangPureWhite.webp";
+import darkLogo from "../../assets/imgs/logo/shang/ShangGray.webp";
 import { Icon } from "@iconify/react";
 
 
