@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import Gallery from "./Gallery";
+import Gallery from "./layout/client/Gallery";
 
 export default function FeaturedProjectsSection() {
   const headingRef = useRef(null);
