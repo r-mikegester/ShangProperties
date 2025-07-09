@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import Contact from './Contact';
+import Contact from './layout/client/Contact';
+import InquireSheet from './InquireSheet';
 import { Icon } from '@iconify/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const isMobile = () => window.innerWidth <= 768;
 
@@ -17,39 +19,27 @@ const FloatingContactButton: React.FC = () => {
   return (
     <>
       {/* Floating Button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed right-6 bottom-6 z-[2999] bg-gradient-to-br from-[#AD8A19] to-[#686058] text-white border-none rounded-full w-16 h-16 shadow-lg cursor-pointer outline-none transition-transform duration-200 text-3xl flex items-center justify-center animate-float-bounce"
-        aria-label="Contact"
-        type="button"
-      >
-        <span role="img" aria-label="Contact"> <Icon icon="solar:call-chat-rounded-broken" className="size-10"/></span>
-
-      </button>
-
-      {/* Modal/Bottom Sheet Overlay */}
-      {open && (
-        <div
-          className={`fixed inset-0 w-screen h-screen bg-black/40 z-[2999] flex transition-colors duration-300 ${mobile ? 'items-end' : 'items-center -4'} justify-center`}
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className={`bg-white ${mobile ? 'rounded-t-3xl w-screen min-h-[320px] max-h-[80vh] animate-slide-up' : 'rounded-2xl w-full max-w-[95vw] max-h-[90vh] animate-fade-in'} shadow-2xl p-6 relative`}
-            onClick={e => e.stopPropagation()}
+      <AnimatePresence>
+        {!open && (
+          <motion.button
+            key="floating-contact-btn"
+            initial={{ opacity: 0, scale: 0.7, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 400, damping: 22 } }}
+            exit={{ opacity: 0, scale: 0.7, y: 30, transition: { duration: 0.2 } }}
+            onClick={() => setOpen(true)}
+            className="fixed right-6 bottom-6 z-[2999] bg-gradient-to-br from-[#AD8A19] to-[#686058] text-white border-none rounded-full w-16 h-16 shadow-lg cursor-pointer outline-none transition-transform duration-200 text-3xl flex items-center justify-center animate-float-bounce"
+            aria-label="Contact"
+            type="button"
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute top-3 right-3 bg-transparent border-none text-2xl cursor-pointer text-gray-400 hover:text-gray-600"
-              aria-label="Close"
-              type="button"
-            >
-              ×
-            </button>
-            <Contact />
-          </div>
-        </div>
-      )}
+            <span role="img" aria-label="Contact"> <Icon icon="solar:call-chat-rounded-broken" className="size-10"/></span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* InquireSheet Modal/Sheet */}
+      <InquireSheet open={open} onClose={() => setOpen(false)}>
+        <Contact />
+      </InquireSheet>
       {/* Animations */}
       <style>{`
         @keyframes float-bounce {
@@ -58,20 +48,6 @@ const FloatingContactButton: React.FC = () => {
         }
         .animate-float-bounce {
           animation: float-bounce 1.5s infinite;
-        }
-        @keyframes slide-up {
-          from { transform: translateY(100%); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-slide-up {
-          animation: slide-up 0.3s;
-        }
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s;
         }
       `}</style>
     </>
