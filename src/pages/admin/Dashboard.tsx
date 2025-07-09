@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { auth } from "../../lib/firebase/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -7,31 +7,41 @@ import { motion } from "motion/react";
 import { cn } from "../../lib/utils/utils";
 import profile from "../../assets/imgs/profile/VeneziaEspiritu.jpg";
 import { Icon } from '@iconify/react';
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { firestore } from "../../lib/firebase/firebase";
+import { toast } from "react-toastify";
+import {
+  DASHBOARD_ROUTE,
+  PROJECTS_ROUTE,
+  INQUIRIES_ROUTE,
+  PAGE_MANAGEMENT_ROUTE,
+} from "../../lib/router/routePaths";
+
 const links = [
   {
     label: "Dashboard",
-    href: "/dashboard",
+    href: DASHBOARD_ROUTE,
     icon: (
       <Icon icon="solar:chat-square-2-broken" className="h-10 w-10 shrink-0 text-neutral-700 dark:text-neutral-200" />
     ),
   },
   {
     label: "Projects",
-    href: "#",
+    href: PROJECTS_ROUTE,
     icon: (
      <Icon icon="solar:inbox-archive-broken"  className="h-10 w-10 shrink-0 text-neutral-700 dark:text-neutral-200" />
     ),
   },
   {
     label: "Inquiries",
-    href: "#",
+    href: INQUIRIES_ROUTE,
     icon: (
      <Icon icon="solar:letter-broken" className="h-10 w-10 shrink-0 text-neutral-700 dark:text-neutral-200" />
     ),
   },
   {
     label: "Page Management",
-    href: "#",
+    href: PAGE_MANAGEMENT_ROUTE,
     icon: (
       <Icon icon="solar:feed-broken" className="h-10 w-10 shrink-0 text-neutral-700 dark:text-neutral-200"/>
     ),
@@ -62,6 +72,25 @@ const Dashboard = () => {
     });
     return () => unsub();
   }, [navigate]);
+
+  // Real-time notification for new inquiries
+  const initialized = useRef(false);
+  useEffect(() => {
+    const q = query(collection(firestore, "inquiries"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!initialized.current) {
+        initialized.current = true; // Skip initial load
+        return;
+      }
+      const changes = snapshot.docChanges();
+      changes.forEach(change => {
+        if (change.type === "added") {
+          toast.info("New inquiry received!");
+        }
+      });
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div
