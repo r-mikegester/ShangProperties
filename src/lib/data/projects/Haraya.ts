@@ -1,4 +1,3 @@
-// Haraya.ts
 import Haraya from "../../../assets/imgs/projects/haraya/V1.webp";
 import KMS1 from "../../../assets/imgs/projects/haraya/KMS1.webp";
 import KMS2 from "../../../assets/imgs/projects/haraya/KMS2.webp";

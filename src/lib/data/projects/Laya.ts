@@ -1,4 +1,3 @@
-// Laya.ts
 import Laya from "../../../assets/imgs/projects/laya/01_Aerial_View_Night_03.webp";
 import Laya2 from "../../../assets/imgs/projects/laya/04_Semi_Aerial_View_Night_03.webp";
 import Laya3 from "../../../assets/imgs/projects/laya/Laya_Building_Render_2.webp";

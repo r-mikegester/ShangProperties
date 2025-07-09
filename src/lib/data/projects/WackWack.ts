@@ -1,4 +1,3 @@
-// WackWack.ts
 import WackWack from "../../../assets/imgs/projects/wackwack/facade_evening.webp";
 import SWWGym from "../../../assets/imgs/projects/wackwack/SWW_Gym.webp";
 import SWWLobby from "../../../assets/imgs/projects/wackwack/SWW_Lobby.webp";

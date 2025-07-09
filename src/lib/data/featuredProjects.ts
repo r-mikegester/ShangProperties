@@ -1,4 +1,3 @@
-// featuredProjects.ts
 import Laya from "./projects/Laya";
 import ShangSummit from "./projects/ShangSummit";
 import Haraya from "./projects/Haraya";
