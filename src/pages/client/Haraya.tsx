@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import Contact from "../../components/Contact";
+import Contact from "../../components/layout/client/Contact";
 import InquireSheet from "../../components/InquireSheet";
 import { useState } from "react";
 import Footer from "../../components/common/Footer";
@@ -8,6 +8,8 @@ import { LayoutGrid } from "../../components/LayoutGrid";
 import FullscreenImage from "../../components/FullscreenImage";
 import projects from "../../lib/data/featuredProjects";
 import { Link } from "react-router-dom";
+import FloatingContactButton from '../../components/FloatingContactButton';
+import React from "react";
 
 interface HarayaProps {
     projectId?: number;
@@ -16,8 +18,15 @@ interface HarayaProps {
 
 const Haraya = () => {
     const [sheetOpen, setSheetOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
     // Always select Haraya Residences project
     const project = projects.find((p) => p.title === "Haraya");
+
+    // Simulate loading (replace with real data fetching if needed)
+    React.useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1200);
+        return () => clearTimeout(timer);
+    }, []);
 
     if (!project) return <div>Project not found.</div>;
 
@@ -115,12 +124,15 @@ const Haraya = () => {
                                     </div>
                                     {/* End Grid */}
 
-                                    <FullscreenImage
-                                        src={project.image}
-                                        alt={project.formalName}
-                                        caption={project.sm}
-                                        className="w-full object-cover rounded-xl cursor-pointer"
-                                    />
+                                    {project.tours360 && project.tours360.length > 0 && (
+                                        <FullscreenImage
+                                            src={project.image}
+                                            alt={project.formalName}
+                                            caption={project.sm}
+                                            className="w-full object-cover rounded-xl cursor-pointer"
+                                            tours360={project.tours360}
+                                        />
+                                    )}
 
                                     {/* ... badges/tags and buttons can also be made dynamic if you add them to your data ... */}
                                 </div>
@@ -156,42 +168,56 @@ const Haraya = () => {
                                 {/* End Avatar Media */}
 
                                 <div className="space-y-6">
-                                    <h1 className="font-semibold text-3xl castoro-titling-regular">Other Projects</h1>
-                                    {otherProjects.map((p) => {
-                                    // Map project title to new route path
-                                    let route = "/";
-                                    switch (p.title) {
-                                    case "Laya":
-                                    route = "/Laya";
-                                    break;
-                                    case "ShangSummit":
-                                    route = "/ShangSummit";
-                                    break;
-                                    case "Haraya":
-                                    route = "/Haraya";
-                                    break;
-                                    case "Aurelia":
-                                    route = "/Aurelia";
-                                    break;
-                                    case "WackWack":
-                                    route = "/WackWack";
-                                    break;
-                                    default:
-                                    route = "/";
-                                    }
-                                    return (
-                                    <Link className="group flex items-center gap-x-6 focus:outline-hidden" to={route} key={p.id}>
-                                    <div className="grow">
-                                    <span className="text-lg font-semibold text-gray-800 group-hover:text-blue-600 group-focus:text-blue-600 castoro-titling-regular">
-                                    {p.formalName}
-                                    </span>
+                                    <h1 className="font-semibold text-2xl sm:text-3xl castoro-titling-regular text-center sm:text-left">Other Projects</h1>
+                                    <div className="flex flex-col gap-4 max-w-full overflow-x-auto">
+                                    {loading ? (
+                                        // Skeleton loaders for sidebar projects
+                                        Array.from({ length: 4 }).map((_, idx) => (
+                                            <div key={idx} className="flex items-center gap-x-4 sm:gap-x-6 animate-pulse min-w-0">
+                                                <div className="grow min-w-0">
+                                                    <span className="block h-6 w-32 bg-gray-300 rounded mb-2"></span>
+                                                </div>
+                                                <div className="shrink-0 relative rounded-lg overflow-hidden size-16 sm:size-20 bg-gray-300"></div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        otherProjects.map((p) => {
+                                            // Map project title to new route path
+                                            let route = "/";
+                                            switch (p.title) {
+                                                case "Laya":
+                                                    route = "/Laya";
+                                                    break;
+                                                case "ShangSummit":
+                                                    route = "/ShangSummit";
+                                                    break;
+                                                case "Haraya":
+                                                    route = "/Haraya";
+                                                    break;
+                                                case "Aurelia":
+                                                    route = "/Aurelia";
+                                                    break;
+                                                case "WackWack":
+                                                    route = "/WackWack";
+                                                    break;
+                                                default:
+                                                    route = "/";
+                                            }
+                                            return (
+                                                <Link className="group flex items-center gap-x-4 sm:gap-x-6 focus:outline-hidden min-w-0" to={route} key={p.id}>
+                                                    <div className="grow min-w-0">
+                                                        <span className="text-base sm:text-lg font-semibold text-gray-800 group-hover:text-blue-600 group-focus:text-blue-600 castoro-titling-regular truncate block">
+                                                            {p.formalName}
+                                                        </span>
+                                                    </div>
+                                                    <div className="shrink-0 relative rounded-lg overflow-hidden size-16 sm:size-20">
+                                                        <img className="size-full absolute top-0 start-0 object-cover rounded-lg" src={p.image} alt={p.title} loading="lazy" />
+                                                    </div>
+                                                </Link>
+                                            );
+                                        })
+                                    )}
                                     </div>
-                                    <div className="shrink-0 relative rounded-lg overflow-hidden size-20">
-                                    <img className="size-full absolute top-0 start-0 object-cover rounded-lg" src={p.image} alt={p.title} />
-                                    </div>
-                                    </Link>
-                                    );
-                                    })}
                                 </div>
                             </div>
                         </div>
@@ -203,6 +229,7 @@ const Haraya = () => {
                 <Contact />
             </InquireSheet>
             <Footer />
+            <FloatingContactButton />
         </>
     );
 };
