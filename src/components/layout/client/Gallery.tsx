@@ -1,4 +1,3 @@
-
 import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,11 +9,11 @@ import {
     Program,
     Texture,
 } from "ogl";
-import Aurelia from "../assets/imgs/aurelia/Aurelia Street View_with bleed.jpg";
-import Haraya from "../assets/imgs/haraya/V1_Shang Robinsons Inc. Properties_Haraya Residences_view01_extended_transparency brighter - Copy.jpg";
-import Laya from "../assets/imgs/laya/facade/01_Aerial View_Night_03.jpg";
-import ShangSummit from "../assets/imgs/ShangSummit.webp";
-import WackWack from "../assets/imgs/wackwack/SRWW_Building-Façade_View-01b_FA_181105.webp";
+import Aurelia from "../../../assets/imgs/projects/aurelia/Aurelia_Street_View_with_bleed.webp";
+import Haraya from "../../../assets/imgs/projects/haraya/V1.webp";
+import Laya from "../../../assets/imgs/projects/laya/01_Aerial_View_Night_03.webp";
+import ShangSummit from "../../../assets/imgs/projects/shangsummit/ShangSummit.webp";
+import WackWack from "../../../assets/imgs/projects/wackwack/facade_evening.webp";
 
 type GL = Renderer["gl"];
 
@@ -185,7 +184,7 @@ interface MediaProps {
 }
 
 class Media {
-    setHovered(isHovered: boolean) {
+        setHovered(isHovered: boolean) {
         if (this.program && this.program.uniforms.uHovered && this.program.uniforms.uHoverScale) {
             this.program.uniforms.uHovered.value = isHovered ? 1 : 0;
             this.program.uniforms.uHoverScale.value = isHovered ? 0.95 : 1.0;
@@ -260,7 +259,7 @@ class Media {
         this.onResize();
     }
 
-    createShader() {
+        createShader() {
         const texture = new Texture(this.gl, { generateMipmaps: false });
         texture.minFilter = this.gl.LINEAR;
         texture.magFilter = this.gl.LINEAR;
@@ -293,8 +292,7 @@ class Media {
         uniform float uHoverScale;
         varying vec2 vUv;
         
-        // Rounded box SDF for UV space
-        float roundedBoxSDF(vec2 p, vec2 b, float r) {
+                float roundedBoxSDF(vec2 p, vec2 b, float r) {
           vec2 d = abs(p) - b;
           return length(max(d, vec2(0.0))) + min(max(d.x, d.y), 0.0) - r;
         }
@@ -304,8 +302,7 @@ class Media {
             min((uPlaneSizes.x / uPlaneSizes.y) / (uImageSizes.x / uImageSizes.y), 1.0),
             min((uPlaneSizes.y / uPlaneSizes.x) / (uImageSizes.y / uImageSizes.x), 1.0)
           );
-          // Centered scaling of the image
-          float scale = mix(1.0, 0.95, uHovered * 1.0); // 0.95 if hovered, 1.0 if not
+                    float scale = mix(1.0, 0.95, uHovered * 1.0);
           vec2 center = vec2(0.5, 0.5);
           vec2 scaledUv = (vUv - center) * scale + center;
           vec2 uv = vec2(
@@ -314,15 +311,13 @@ class Media {
           );
           vec4 color = texture2D(tMap, uv);
           
-          // Apply rounded corners (assumes vUv in [0,1])
-          float d = roundedBoxSDF(vUv - 0.5, vec2(0.5 - uBorderRadius), uBorderRadius);
+                    float d = roundedBoxSDF(vUv - 0.5, vec2(0.5 - uBorderRadius), uBorderRadius);
           if(d > 0.0) {
             discard;
           }
-          // Draw white border in the area between the scaled image and the original image
-          if(uHovered > 0.5) {
-            float border = 0.10; // thickness
-            float scaleBorder = 0.95; // match image scale on hover
+                    if(uHovered > 0.5) {
+            float border = 0.10;
+            float scaleBorder = 0.95;
             float dOuter = roundedBoxSDF(vUv - 0.5, vec2(0.5 - uBorderRadius), uBorderRadius);
             float dInner = roundedBoxSDF((vUv - center) / scaleBorder + center - 0.5, vec2(0.5 - uBorderRadius), uBorderRadius);
             if(dOuter < 0.0 && dInner > 0.0 && dInner < border * 2.0) {
@@ -330,8 +325,7 @@ class Media {
               return;
             }
           }
-          // Only draw the image inside the scaled area
-          float dImage = roundedBoxSDF(scaledUv - 0.5, vec2(0.5 - uBorderRadius), uBorderRadius);
+                    float dImage = roundedBoxSDF(scaledUv - 0.5, vec2(0.5 - uBorderRadius), uBorderRadius);
           if(dImage > 0.0) discard;
           gl_FragColor = vec4(color.rgb, 1.0);
         }
@@ -360,16 +354,15 @@ class Media {
         };
     }
 
-    createMesh() {
+        createMesh() {
         this.plane = new Mesh(this.gl, {
             geometry: this.geometry,
             program: this.program,
         });
         this.plane.setParent(this.scene);
-        // No onClick here; handled in App.handleClick
-    }
+            }
 
-    createTitle() {
+        createTitle() {
         this.title = new Title({
             gl: this.gl,
             plane: this.plane,
@@ -380,7 +373,7 @@ class Media {
         });
     }
 
-    update(
+        update(
         scroll: { current: number; last: number },
         direction: "right" | "left"
     ) {
@@ -425,7 +418,7 @@ class Media {
         }
     }
 
-    onResize({
+        onResize({
         screen,
         viewport,
     }: { screen?: ScreenSize; viewport?: Viewport } = {}) {
@@ -456,12 +449,12 @@ class Media {
 }
 
 interface AppConfig {
-    items?: { image: string; text: string; route: string; }[]; // Ensure route is included
+    items?: { image: string; text: string; route: string; }[];
     bend?: number;
     textColor?: string;
     borderRadius?: number;
     font?: string;
-    navigate?: (path: string) => void; // Add this line
+    navigate?: (path: string) => void;
 }
 
 
@@ -497,18 +490,15 @@ class App {
     start: number = 0;
     navigate?: (path: string) => void;
 
-    handleClick(event: MouseEvent) {
+        handleClick(event: MouseEvent) {
         const rect = this.renderer.gl.canvas.getBoundingClientRect();
         const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-        // For each media, project its position to screen space and check bounds
-        for (const media of this.medias) {
-            // Project mesh position to NDC
-            const pos = media.plane.position;
+                for (const media of this.medias) {
+                        const pos = media.plane.position;
             const ndcX = pos.x / (this.viewport.width / 2);
             const ndcY = pos.y / (this.viewport.height / 2);
-            // Calculate mesh bounds in NDC
-            const halfW = media.plane.scale.x / this.viewport.width;
+                        const halfW = media.plane.scale.x / this.viewport.width;
             const halfH = media.plane.scale.y / this.viewport.height;
             if (
                 mouseX > ndcX - halfW &&
@@ -594,6 +584,14 @@ class App {
         this.gl = this.renderer.gl;
         this.gl.clearColor(0, 0, 0, 0);
         this.container.appendChild(this.renderer.gl.canvas as HTMLCanvasElement);
+        // Ensure the canvas fills the container from the very top, with no top padding
+        const canvas = this.renderer.gl.canvas as HTMLCanvasElement;
+        canvas.style.position = "absolute";
+        canvas.style.top = "0";
+        canvas.style.left = "0";
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.style.display = "block";
     }
 
     createCamera() {
@@ -789,6 +787,9 @@ interface CircularGalleryProps {
     font?: string;
 }
 
+import React, { useState } from "react";
+
+// Gallery component wraps the WebGL gallery and overlays for Visit/Inquire
 export default function Gallery({
     items,
     bend = 0,
@@ -798,8 +799,10 @@ export default function Gallery({
 }: CircularGalleryProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const [selected, setSelected] = useState<null | { route: string; text: string; index: number }>(null);
+    const [overlayPos, setOverlayPos] = useState<{x: number, y: number, width: number, height: number} | null>(null);
 
-    // Ensure all items have a route property, even if items is undefined or missing route
+    // fallback to default items if items prop is missing or incomplete
     const defaultItems = [
         { image: Aurelia, text: "Aurelia", route: "/Aurelia" },
         { image: Haraya, text: "Haraya", route: "/Haraya" },
@@ -809,22 +812,137 @@ export default function Gallery({
     ];
     const safeItems = (items && items.every(i => 'route' in i)) ? items : defaultItems;
 
+        const appRef = useRef<App | null>(null);
     useEffect(() => {
         if (!containerRef.current) return;
-        const app = new App(containerRef.current, {
+        class AppWithClick extends App {
+            handleClick(event: MouseEvent) {
+                const rect = this.renderer.gl.canvas.getBoundingClientRect();
+                const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                for (const [idx, media] of this.medias.entries()) {
+                    const pos = media.plane.position;
+                    const ndcX = pos.x / (this.viewport.width / 2);
+                    const ndcY = pos.y / (this.viewport.height / 2);
+                    const halfW = media.plane.scale.x / this.viewport.width;
+                    const halfH = media.plane.scale.y / this.viewport.height;
+                    if (
+                        mouseX > ndcX - halfW &&
+                        mouseX < ndcX + halfW &&
+                        mouseY > ndcY - halfH &&
+                        mouseY < ndcY + halfH
+                    ) {
+                        setSelected({
+                            route: media.route,
+                            text: media.text,
+                            index: idx,
+                        });
+                        return;
+                    }
+                }
+                setSelected(null);
+            }
+        }
+        appRef.current = new AppWithClick(containerRef.current, {
             items: safeItems,
             bend,
             textColor,
             borderRadius,
             font,
-            navigate, // Pass navigate function here
+            navigate,
         });
         return () => {
-            app.destroy();
+            appRef.current?.destroy();
         };
     }, [safeItems, bend, textColor, borderRadius, font, navigate]);
-    return <div
-        className="w-full h-screen bg-[#686058] overflow-hidden cursor-grab active:cursor-grabbing"
-        ref={containerRef}
-    />;
+
+        useEffect(() => {
+        let raf: number;
+        function updateOverlay() {
+            if (selected && appRef.current) {
+                const media = appRef.current.medias[selected.index];
+                if (media && media.route === selected.route) {
+                    const rect = appRef.current.renderer.gl.canvas.getBoundingClientRect();
+                    const pos = media.plane.position;
+                    const ndcX = pos.x / (appRef.current.viewport.width / 2);
+                    const ndcY = pos.y / (appRef.current.viewport.height / 2);
+                    const width = media.plane.scale.x / appRef.current.viewport.width * rect.width;
+                    const height = media.plane.scale.y / appRef.current.viewport.height * rect.height;
+                    const centerX = rect.left + ((ndcX + 1) / 2) * rect.width;
+                    const centerY = rect.top + ((-ndcY + 1) / 2) * rect.height;
+                    setOverlayPos({
+                        x: centerX - width / 2,
+                        y: centerY + height / 2 - 10,
+                        width,
+                        height
+                    });
+                } else {
+                    setOverlayPos(null);
+                }
+            } else {
+                setOverlayPos(null);
+            }
+            raf = requestAnimationFrame(updateOverlay);
+        }
+        raf = requestAnimationFrame(updateOverlay);
+        return () => {
+            cancelAnimationFrame(raf);
+        };
+    }, [selected]);
+
+        useEffect(() => {
+        setSelected(null);
+        setOverlayPos(null);
+    }, [safeItems]);
+
+    return (
+        <div
+            className="w-full h-screen bg-[#686058] overflow-hidden cursor-grab active:cursor-grabbing relative pb-8"
+            style={{paddingTop: 0}}
+            ref={containerRef}
+        >
+                        {selected && overlayPos && (
+                <div
+                    style={{
+                        position: "absolute",
+                        left: overlayPos.x,
+                        top: overlayPos.y - 56,
+                        width: overlayPos.width,
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 12,
+                        zIndex: 10,
+                    }}
+                >
+                    <button
+                        className="gallery-visit-btn"
+                        style={{
+                            background: "#fff",
+                            color: "#222",
+                            borderRadius: 8,
+                            padding: "8px 18px",
+                            fontWeight: 600,
+                            border: "none",
+                            cursor: "pointer",
+                            transition: "background 0.2s, color 0.2s, transform 0.2s"
+                        }}
+                        onClick={() => {
+                            setSelected(null);
+                            setOverlayPos(null);
+                            navigate(selected.route);
+                        }}
+                    >
+                        {`Visit ${selected.text}`}
+                    </button>
+                </div>
+            )}
+                            <style>{`
+          .gallery-visit-btn:hover {
+            background: #b08b2e;
+            color: #fff;
+            transform: scale(1.05);
+          }
+        `}</style>
+    </div>
+    );
 }
