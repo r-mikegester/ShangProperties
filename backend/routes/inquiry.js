@@ -11,6 +11,18 @@ console.log('SENDGRID_API_KEY:', process.env.SENDGRID_API_KEY);
 require('dotenv').config();
 
 
+// GET all inquiries for admin dashboard
+router.get('/', async (req, res) => {
+  try {
+    const snapshot = await db.collection('inquiries').orderBy('createdAt', 'desc').get();
+    const inquiries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.status(200).json(inquiries);
+  } catch (err) {
+    console.error('Error fetching inquiries:', err);
+    res.status(500).json({ error: 'Failed to fetch inquiries' });
+  }
+});
+
 router.post('/', async (req, res) => {
   const {
     firstName,
@@ -19,12 +31,13 @@ router.post('/', async (req, res) => {
     phone,
     country,
     property,
-    inquiryType,
     message,
   } = req.body;
 
+  // Debug: log received fields
+  console.log('Received:', { email, firstName, lastName, phone, country, property, message });
   // Only require the fields actually used
-  if (!email || !firstName || !lastName || !phone || !country || !property || !inquiryType) {
+  if (!email || !firstName || !lastName || !phone || !country || !property) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -35,7 +48,6 @@ router.post('/', async (req, res) => {
     phone,
     country,
     property,
-    inquiryType,
     message,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
@@ -60,7 +72,6 @@ router.post('/', async (req, res) => {
         <p><strong>Phone:</strong> ${phone}</p>
         <p><strong>Country:</strong> ${country}</p>
         <p><strong>Property:</strong> ${property}</p>
-        <p><strong>Inquiry Type:</strong> ${inquiryType}</p>
         <p><strong>Message:</strong> ${message}</p>
       `,
     };
