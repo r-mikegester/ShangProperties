@@ -1,8 +1,7 @@
-// src/components/Navbar.tsx
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import whiteLogo from "../assets/logos/shang/ShangPureWhite.png";
-import darkLogo from "../assets/logos/shang/ShangGray.png";
+import whiteLogo from "../../assets/imgs/logo/shang/ShangPureWhite.png";
+import darkLogo from "../../assets/imgs/logo/shang/ShangGray.png";
 import { Icon } from "@iconify/react";
 
 
@@ -24,17 +23,17 @@ const Navbar = () => {
         isScrolled ? "bg-white/80 backdrop-blur shadow-md text-[#b08b2e]" : "bg-transparent text-white"
       )}
     >
-      <div className="w-screen mx-auto px-10 py-2 md:px-20 h-20 flex justify-center md:justify-between items-center">
-        <div className="flex space-x-2 items-center justify-center">
+      <div className="w-screen mx-auto px-4 sm:px-10 py-2 md:px-20 h-20 flex flex-col md:flex-row justify-center md:justify-between items-center">
+        <div className="flex w-full md:w-auto items-center justify-center md:justify-start">
           <img
             src={isScrolled ? darkLogo : whiteLogo}
-            className="w-full h-20 transition-all duration-300"
+            className="h-14 w-auto max-w-[160px] object-contain mx-auto transition-all duration-300"
             alt="logo"
           />
-
           <span className="text-xl font-bold"></span>
         </div>
-        <div className="flex justify-between items-center w-full">
+        {/* Navigation or other content can go here for desktop */}
+        <div className="hidden md:flex justify-between items-center w-full">
           <div className="flex space-x-4">
             {/* <a href="#home" className="hover:text-green-500">HOME</a>
             <a href="#projects" className="hover:text-green-500">PROJECTS</a>
