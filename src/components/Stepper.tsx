@@ -5,11 +5,33 @@ import React, {
     useLayoutEffect,
     HTMLAttributes,
     ReactNode,
+    isValidElement,
+    forwardRef,
+    useImperativeHandle
 } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 
-interface StepperProps extends HTMLAttributes<HTMLDivElement> {
-    children: ReactNode;
+interface StepperRenderProps {
+    currentStep: number;
+    totalSteps: number;
+    isLastStep: boolean;
+    isCompleted: boolean;
+    next: () => void;
+    back: () => void;
+    complete: () => void;
+    goTo: (step: number) => void;
+}
+
+export interface StepperRef {
+    next: () => void;
+    back: () => void;
+    complete: () => void;
+    goTo: (step: number) => void;
+    getCurrentStep: () => number;
+}
+
+interface StepperProps {
+    children: React.ReactNode | ((props: StepperRenderProps) => React.ReactNode);
     initialStep?: number;
     onStepChange?: (step: number) => void;
     onFinalStepCompleted?: () => void;
@@ -26,10 +48,12 @@ interface StepperProps extends HTMLAttributes<HTMLDivElement> {
         step: number;
         currentStep: number;
         onStepClick: (clicked: number) => void;
-    }) => ReactNode;
+    }) => React.ReactNode;
+    className?: string;
+    style?: React.CSSProperties;
 }
 
-export default function Stepper({
+const Stepper = forwardRef<StepperRef, StepperProps>(function Stepper({
     children,
     initialStep = 1,
     onStepChange = () => { },
@@ -45,10 +69,12 @@ export default function Stepper({
     disableStepIndicators = false,
     renderStepIndicator,
     ...rest
-}: StepperProps) {
+}, ref) {
     const [currentStep, setCurrentStep] = useState<number>(initialStep);
     const [direction, setDirection] = useState<number>(0);
-    const stepsArray = Children.toArray(children);
+    const stepsArray = Children.toArray(
+        typeof children === "function" ? [] : children
+    );
     const totalSteps = stepsArray.length;
     const isCompleted = currentStep > totalSteps;
     const isLastStep = currentStep === totalSteps;
@@ -81,17 +107,53 @@ export default function Stepper({
         updateStep(totalSteps + 1);
     };
 
+    const goTo = (step: number) => {
+        if (step >= 1 && step <= totalSteps) {
+            setDirection(step > currentStep ? 1 : -1);
+            updateStep(step);
+        }
+    };
+
+    useImperativeHandle(ref, () => ({
+        next: handleNext,
+        back: handleBack,
+        complete: handleComplete,
+        goTo,
+        getCurrentStep: () => currentStep,
+    }), [currentStep]);
+
+    // Render prop pattern
+    if (typeof children === "function") {
+        return (
+            <div
+                className="flex min-h-full flex-1 flex-col items-center justify-center p-4 sm:aspect-[4/3] md:aspect-[2/1]"
+                {...rest}
+            >
+                {children({
+                    currentStep,
+                    totalSteps,
+                    isLastStep,
+                    isCompleted,
+                    next: handleNext,
+                    back: handleBack,
+                    complete: handleComplete,
+                    goTo,
+                })}
+            </div>
+        );
+    }
+
+    // Default rendering (backward compatible)
     return (
         <div
             className="flex min-h-full flex-1 flex-col items-center justify-center p-4 sm:aspect-[4/3] md:aspect-[2/1]"
             {...rest}
         >
             <div
-                className={`mx-auto w-full max-w-md rounded-4xl shadow-xl ${stepCircleContainerClassName}`}
-                style={{ border: "1px solid #222" }}
+                className={`mx-auto w-full max-w-md bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl ${stepCircleContainerClassName}`}
             >
                 <div
-                    className={`${stepContainerClassName} flex w-full items-center p-8`}
+                    className={`${stepContainerClassName} flex w-full items-center pt-8 px-8`}
                 >
                     {stepsArray.map((_, index) => {
                         const stepNumber = index + 1;
@@ -134,39 +196,12 @@ export default function Stepper({
                 >
                     {stepsArray[currentStep - 1]}
                 </StepContentWrapper>
-
-                {!isCompleted && (
-                    <div className={`px-8 pb-8 ${footerClassName}`}>
-                        <div
-                            className={`mt-10 flex ${currentStep !== 1 ? "justify-between" : "justify-end"
-                                }`}
-                        >
-                            {currentStep !== 1 && (
-                                <button
-                                    onClick={handleBack}
-                                    className={`duration-350 rounded px-2 py-1 transition castoro-titling-regular font-semibold ${currentStep === 1
-                                            ? "pointer-events-none opacity-50 text-neutral-400"
-                                            : "text-[#b08b2e] hover:text-[#8a6c1d]"
-                                        }`}
-                                    {...backButtonProps}
-                                >
-                                    {backButtonText}
-                                </button>
-                            )}
-                            <button
-                                onClick={isLastStep ? handleComplete : handleNext}
-                                className="duration-350 flex items-center justify-center rounded-full bg-[#b08b2e] py-1.5 px-5 font-semibold tracking-tight text-white transition hover:bg-[#8a6c1d] active:bg-[#8a6c1d] castoro-titling-regular text-base"
-                                {...nextButtonProps}
-                            >
-                                {isLastStep ? "Complete" : nextButtonText}
-                            </button>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
-}
+});
+
+export default Stepper;
 
 interface StepContentWrapperProps {
     isCompleted: boolean;
@@ -262,7 +297,7 @@ interface StepProps {
 }
 
 export function Step({ children }: StepProps) {
-    return <div className="px-8">{children}</div>;
+    return <div className="p-8">{children}</div>;
 }
 
 interface StepIndicatorProps {
@@ -300,19 +335,17 @@ function StepIndicator({
         >
             <motion.div
                 variants={{
-                    inactive: { scale: 1, backgroundColor: "#222", color: "#a3a3a3" },
-                    active: { scale: 1, backgroundColor: "#b08b2e", color: "#fff" },
-                    complete: { scale: 1, backgroundColor: "#b08b2e", color: "#fff" },
+                    inactive: { scale: 1, backgroundColor: "#f3f4f6", color: "#a3a3a3", boxShadow: "0 2px 8px 0 #e5e7eb" },
+                    active: { scale: 1.1, backgroundColor: "#b08b2e", color: "#fff", boxShadow: "0 4px 16px 0 #b08b2e33" },
+                    complete: { scale: 1, backgroundColor: "#b08b2e", color: "#fff", boxShadow: "0 2px 8px 0 #b08b2e22" },
                 }}
                 transition={{ duration: 0.3 }}
-                className="flex h-8 w-8 items-center justify-center rounded-full font-semibold castoro-titling-regular"
+                className="flex h-12 w-12 items-center justify-center rounded-full font-semibold castoro-titling-regular text-lg shadow-md border-4 border-white"
             >
                 {status === "complete" ? (
-                    <CheckIcon className="h-4 w-4 text-[#b08b2e]" />
-                ) : status === "active" ? (
-                    <div className="h-3 w-3 rounded-full bg-[#060606]" />
+                    <CheckIcon className="h-6 w-6 text-white" />
                 ) : (
-                    <span className="text-sm">{step}</span>
+                    <span className="text-lg">{step}</span>
                 )}
             </motion.div>
         </motion.div>
@@ -325,14 +358,14 @@ interface StepConnectorProps {
 
 function StepConnector({ isComplete }: StepConnectorProps) {
     const lineVariants: Variants = {
-        incomplete: { width: 0, backgroundColor: "#e5e7eb" }, // Tailwind gray-200
+        incomplete: { width: 0, backgroundColor: "#e5e7eb" },
         complete: { width: "100%", backgroundColor: "#b08b2e" },
     };
 
     return (
-        <div className="relative mx-2 h-0.5 flex-1 overflow-hidden rounded bg-neutral-600">
+        <div className="relative mx-2 h-1 flex-1 overflow-hidden rounded-full bg-[#e5e7eb]">
             <motion.div
-                className="absolute left-0 top-0 h-full"
+                className="absolute left-0 top-0 h-full rounded-full"
                 variants={lineVariants}
                 initial={false}
                 animate={isComplete ? "complete" : "incomplete"}
