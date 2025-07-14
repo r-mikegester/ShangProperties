@@ -105,10 +105,13 @@ const Contact = () => {
     } catch (err: any) {
       if (err.response && err.response.data && err.response.data.error) {
         toast.error(`Error: ${err.response.data.error}`);
+      } else if (err.message) {
+        toast.error(`Error: ${err.message}`);
       } else {
         toast.error('Something Went Wrong Unfortunately!');
       }
-      console.error(err);
+      // Log the full error object for debugging
+      console.error('Inquiry submit error:', err, JSON.stringify(err));
     } finally {
       setForm({
         firstName: '',
