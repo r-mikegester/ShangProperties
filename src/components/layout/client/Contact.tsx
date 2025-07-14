@@ -111,6 +111,7 @@ const Contact = () => {
       toast.success('Inquiry Submitted Successfully!');
       // Move to the success step
       if (stepperRef.current) stepperRef.current.next();
+      if (isMobile) setMobileStep(1); // Ensure stepper stays open on mobile
     } catch (err: any) {
       toast.dismiss();
       if (err.response && err.response.data && err.response.data.error) {
@@ -398,34 +399,36 @@ const Contact = () => {
             </div>
           </motion.div>
         </Step>
-        {/* Step 4: Success Confirmation (always present as a step) */}
-        <Step>
-          <motion.div className="space-y-4 flex flex-col items-center justify-center min-h-[200px]" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <Icon icon="mdi:check-circle" className="text-green-500" width={64} height={64} />
-            <h2 className="text-2xl font-semibold text-green-700">Inquiry Submitted Successfully!</h2>
-            <p className="text-gray-700 text-center">Thank you for your inquiry. We will get back to you soon.</p>
-            <button
-              className="mt-6 bg-[#b08b2e] text-white py-3 px-8 rounded-lg font-semibold text-lg shadow-md hover:bg-[#a07a1e] transition"
-              onClick={() => {
-                setForm({
-                  firstName: '',
-                  lastName: '',
-                  email: '',
-                  country: 'Philippines',
-                  property: '',
-                  message: '',
-                });
-                setPhone('');
-                setStepperKey((k) => k + 1);
-                setCurrentStep(1);
-                setShowSuccessStep(false);
-                if (isMobile) setMobileStep(0);
-              }}
-            >
-              Go Back
-            </button>
-          </motion.div>
-        </Step>
+        {/* Step 4: Success Confirmation (conditionally rendered, not included in stepper indicators) */}
+        {showSuccessStep && (
+          <Step>
+            <motion.div className="space-y-4 flex flex-col items-center justify-center min-h-[200px]" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <Icon icon="mdi:check-circle" className="text-green-500" width={64} height={64} />
+              <h2 className="text-2xl font-semibold text-green-700">Inquiry Submitted Successfully!</h2>
+              <p className="text-gray-700 text-center">Thank you for your inquiry. We will get back to you soon.</p>
+              <button
+                className="mt-6 bg-[#b08b2e] text-white py-3 px-8 rounded-lg font-semibold text-lg shadow-md hover:bg-[#a07a1e] transition"
+                onClick={() => {
+                  setForm({
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    country: 'Philippines',
+                    property: '',
+                    message: '',
+                  });
+                  setPhone('');
+                  setStepperKey((k) => k + 1);
+                  setCurrentStep(1);
+                  setShowSuccessStep(false);
+                  if (isMobile) setMobileStep(0);
+                }}
+              >
+                Go Back
+              </button>
+            </motion.div>
+          </Step>
+        )}
       </Stepper>
     </motion.div>
   );
