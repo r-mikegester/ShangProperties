@@ -35,31 +35,31 @@ const Footer = () => {
                         <div className="flex flex-col md:flex-row items-start justify-around w-full lg:w-4/5 gap-8">
                             <div className="flex flex-col max-w-96 w-full text-center items-center">
                                 <h3 className="text-white uppercase font-semibold">New Developments</h3>
-                                <a href="#" className="block mt-2 text-sm text-white hover:underline">Shang Summit</a>
-                                <a href="#" className="block mt-2 text-sm text-white hover:underline">Haraya Residences</a>
-                                <a href="#" className="block mt-2 text-sm text-white hover:underline">Aurelia Residences</a>
-                                <a href="#" className="block mt-2 text-sm text-white hover:underline">Laya Residences</a>
-                                <a href="#" className="block mt-2 text-sm text-white hover:underline">Shang Residences at Wack Wack</a>
+                                <a href="/ShangSummit" className="block mt-2 text-sm text-white hover:underline">Shang Summit</a>
+                                <a href="/Haraya" className="block mt-2 text-sm text-white hover:underline">Haraya Residences</a>
+                                <a href="/Aurelia" className="block mt-2 text-sm text-white hover:underline">Aurelia Residences</a>
+                                <a href="/Laya" className="block mt-2 text-sm text-white hover:underline">Laya Residences</a>
+                                <a href="/WackWack" className="block mt-2 text-sm text-white hover:underline">Shang Residences at Wack Wack</a>
                             </div>
                             <div className="flex flex-col items-center justify-center w-full">
                                 <h3 className="text-white text-center uppercase font-semibold">Connect with me</h3>
                                 <div className="mt-3 xs:w-40 w-full md:max-w-lg grid grid-cols-6 px-6 md:grid-cols-2 gap-4 justify-center items-center">
-                                    <a className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]" href="#">
+                                    <a href="https://www.facebook.com/profile.php?id=100084197640848" className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]" >
                                         <Icon icon="streamline-flex:facebook-logo-1-remix" className="size-8" /> <h1 className="hidden md:flex">Facebook</h1>
                                     </a>
-                                    <a className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]" href="#">
+                                    <a href="https://www.instagram.com/shangproperties.venezia/" className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]" >
                                         <Icon icon="fa6-brands:instagram" className="size-8" /> <h1 className="hidden md:flex">Instagram</h1>
                                     </a>
-                                    <a className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]" href="#">
+                                    <a href="tel:+639972964320" className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]">
                                         <Icon icon="basil:viber-outline" className="size-8" /> <h1 className="hidden md:flex">Viber</h1>
                                     </a>
-                                    <a className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]" href="#">
+                                    <a href="tel:+639972964320" className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]">
                                         <Icon icon="fa6-brands:whatsapp" className="size-8" /> <h1 className="hidden md:flex">WhatsApp</h1>
                                     </a>
-                                    <a className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]" href="#">
+                                    <a href="tel:+639972964320" className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]">
                                         <Icon icon="gravity-ui:logo-telegram" className="size-8" /> <h1 className="hidden md:flex">Telegram</h1>
                                     </a>
-                                    <a className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]" href="#">
+                                    <a href="mailto:guide@shangproperties.com" className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]">
                                         <Icon icon="cib:mail-ru" className="size-8" /> <h1 className="hidden md:flex">Email</h1>
                                     </a>
                                 </div>
