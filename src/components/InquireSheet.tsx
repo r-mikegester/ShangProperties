@@ -75,7 +75,7 @@ const InquireSheet: React.FC<InquireSheetProps> = ({ open, onClose, children }) 
             </DragCloseDrawer>
           ) : (
             <motion.div
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2999] w-[90vw] max-w-5xl bg-white rounded-xl shadow-2xl p-6 flex flex-col max-h-[90vh] overflow-y-auto"
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2999] w-[90vw] max-w-5xl bg-white rounded-xl shadow-2xl p-6 flex flex-col max-h-[90vh] overflow-y-auto md:overflow-y-hidden"
               style={{ WebkitOverflowScrolling: "touch" }}
               initial="hidden"
               animate="visible"
