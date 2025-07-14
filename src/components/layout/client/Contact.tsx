@@ -100,7 +100,7 @@ const Contact = () => {
     }
     setErrors({});
     try {
-      await axios.post('http://localhost:5000/api/inquiry', { ...form, phone });
+      await axios.post('/api/inquiry', { ...form, phone });
       toast.success('Inquiry Submitted Successfully!');
     } catch (err: any) {
       if (err.response && err.response.data && err.response.data.error) {
