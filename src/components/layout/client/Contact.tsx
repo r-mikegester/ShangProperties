@@ -31,6 +31,8 @@ const Contact = () => {
   const [mobileStep, setMobileStep] = useState(0);
   const [stepDirection, setStepDirection] = useState(1);
   const [currentStep, setCurrentStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [showSuccessStep, setShowSuccessStep] = useState(false);
   const stepperRef = useRef<StepperRef>(null);
 
   useEffect(() => {
@@ -90,19 +92,26 @@ const Contact = () => {
   };
 
   const handleSubmit = async () => {
+    if (submitting) return; // Prevent double submit
+    setSubmitting(true);
     // Validate all fields on final submit
     const validationErrors = validateAll();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       const missingFields = getMissingFields(validationErrors);
+      toast.dismiss();
       toast.error(`Please fill in: ${missingFields}`);
+      setSubmitting(false);
       return false;
     }
     setErrors({});
     try {
       await axios.post('/api/inquiry', { ...form, phone });
+      toast.dismiss();
       toast.success('Inquiry Submitted Successfully!');
+      setShowSuccessStep(true);
     } catch (err: any) {
+      toast.dismiss();
       if (err.response && err.response.data && err.response.data.error) {
         toast.error(`Error: ${err.response.data.error}`);
       } else if (err.message) {
@@ -113,6 +122,7 @@ const Contact = () => {
       // Log the full error object for debugging
       console.error('Inquiry submit error:', err, JSON.stringify(err));
     } finally {
+      setSubmitting(false);
       setForm({
         firstName: '',
         lastName: '',
@@ -372,6 +382,7 @@ const Contact = () => {
                   setErrors({});
                   if (stepperRef.current) stepperRef.current.back();
                 }}
+                disabled={submitting}
               >
                 Back
               </button>
@@ -381,12 +392,23 @@ const Contact = () => {
                   e.preventDefault();
                   await handleSubmit();
                 }}
+                disabled={submitting}
               >
-                Submit Inquiry
+                {submitting ? 'Submitting...' : 'Submit Inquiry'}
               </button>
             </div>
           </motion.div>
         </Step>
+        {/* Step 4: Success Confirmation (hidden, only shown after submit) */}
+        {showSuccessStep && (
+          <Step>
+            <motion.div className="space-y-4 flex flex-col items-center justify-center min-h-[200px]" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <Icon icon="mdi:check-circle" className="text-green-500" width={64} height={64} />
+              <h2 className="text-2xl font-semibold text-green-700">Inquiry Submitted Successfully!</h2>
+              <p className="text-gray-700 text-center">Thank you for your inquiry. We will get back to you soon.</p>
+            </motion.div>
+          </Step>
+        )}
       </Stepper>
     </motion.div>
   );
