@@ -278,7 +278,8 @@ class Media {
         void main() {
           vUv = uv;
           vec3 p = position;
-          p.z = (sin(p.x * 4.0 + uTime) * 1.5 + cos(p.y * 2.0 + uTime) * 1.5) * (0.1 + uSpeed * 0.5);
+          // STATIC: Remove waving/animation
+          // p.z = (sin(p.x * 4.0 + uTime) * 1.5 + cos(p.y * 2.0 + uTime) * 1.5) * (0.1 + uSpeed * 0.5);
           gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
         }
       `,
@@ -302,7 +303,7 @@ class Media {
             min((uPlaneSizes.x / uPlaneSizes.y) / (uImageSizes.x / uImageSizes.y), 1.0),
             min((uPlaneSizes.y / uPlaneSizes.x) / (uImageSizes.y / uImageSizes.x), 1.0)
           );
-                    float scale = mix(1.0, 0.95, uHovered * 1.0);
+                    float scale = 1.0; // STATIC: Remove hover scaling
           vec2 center = vec2(0.5, 0.5);
           vec2 scaledUv = (vUv - center) * scale + center;
           vec2 uv = vec2(
