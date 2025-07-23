@@ -149,7 +149,7 @@ const Contact = () => {
         transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
       >
         <h1 className="text-5xl sm:text-5xl font-semibold mb-2 castoro-titling-regular text-center md:text-left text-[#b08b2e]">Get in touch <span className="italic"></span></h1>
-        <p className="mb-6 text-center md:text-left">Please feel free to call, email, or chat with us to learn more about Shang Properties.</p>
+        <p className="mb-6 text-center md:text-left ">Please feel free to call, email, or chat with us to learn more about Shang Properties.</p>
         <div className="space-y-4 text-gray-700">
           <p className="flex items-start">
             <Icon icon="mdi:map-marker" className="w-14 h-14 text-[#B08B2E] mr-2" />

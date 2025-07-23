@@ -17,6 +17,10 @@ import WackWack from "../../../assets/imgs/projects/wackwack/facade_evening.webp
 
 type GL = Renderer["gl"];
 
+/**
+ * debounce - Utility to delay function execution until after wait ms have elapsed since the last call.
+ * Prevents excessive calls to a function in rapid succession.
+ */
 function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
     let timeout: number;
     return function (this: any, ...args: Parameters<T>) {
@@ -25,10 +29,18 @@ function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
     };
 }
 
+/**
+ * lerp - Linear interpolation between two values.
+ * Used for smooth transitions and animations.
+ */
 function lerp(p1: number, p2: number, t: number): number {
     return p1 + (p2 - p1) * t;
 }
 
+/**
+ * autoBind - Binds all methods of a class instance to itself.
+ * Ensures 'this' always refers to the class instance.
+ */
 function autoBind(instance: any): void {
     const proto = Object.getPrototypeOf(instance);
     Object.getOwnPropertyNames(proto).forEach((key) => {
@@ -38,36 +50,72 @@ function autoBind(instance: any): void {
     });
 }
 
+/**
+ * getFontSize - Extracts the font size in px from a font string.
+ * Example: 'bold 30px Westmount' => 30
+ */
 function getFontSize(font: string): number {
     const match = font.match(/(\d+)px/);
     return match ? parseInt(match[1], 10) : 30;
 }
 
+/**
+ * createTextTexture - Renders text (including multi-line and letter spacing) to a canvas and returns a WebGL texture.
+ * Handles line breaks and prevents truncation for long titles.
+ */
 function createTextTexture(
     gl: GL,
     text: string,
-    font: string = "bold 30px monospace",
-    color: string = "black"
+    font: string = "bold 30px Westmount",
+    color: string = "black",
+    letterSpacing: number = 2 // px
 ): { texture: Texture; width: number; height: number } {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Could not get 2d context");
 
     context.font = font;
-    const metrics = context.measureText(text);
-    const textWidth = Math.ceil(metrics.width);
+    const lines = text.split("\n");
     const fontSize = getFontSize(font);
-    const textHeight = Math.ceil(fontSize * 1.2);
+    // Calculate max width with letter spacing
+    let maxWidth = 0;
+    for (const line of lines) {
+        let width = 0;
+        for (let i = 0; i < line.length; i++) {
+            width += context.measureText(line[i]).width;
+            if (i < line.length - 1) width += letterSpacing;
+        }
+        maxWidth = Math.max(maxWidth, width);
+    }
+    const lineHeight = Math.ceil(fontSize * 1.15);
+    const textHeight = lines.length * lineHeight + (lines.length - 1) * 2; // 2px gap between lines
 
-    canvas.width = textWidth + 20;
-    canvas.height = textHeight + 20;
+    // Increased padding to prevent truncation of long titles
+    canvas.width = Math.ceil(maxWidth) + 64;
+    canvas.height = textHeight + 24;
 
     context.font = font;
     context.fillStyle = color;
-    context.textBaseline = "middle";
+    context.textBaseline = "top";
     context.textAlign = "center";
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const x = canvas.width / 2;
+    let y = 12;
+    for (const line of lines) {
+        // Draw each letter with spacing
+        let lineWidth = 0;
+        for (let i = 0; i < line.length; i++) {
+            lineWidth += context.measureText(line[i]).width;
+            if (i < line.length - 1) lineWidth += letterSpacing;
+        }
+        let startX = x - lineWidth / 2;
+        for (let i = 0; i < line.length; i++) {
+            context.fillText(line[i], startX, y);
+            startX += context.measureText(line[i]).width + letterSpacing;
+        }
+        y += lineHeight + 2; // 2px gap between lines
+    }
 
     const texture = new Texture(gl, { generateMipmaps: false });
     texture.minFilter = gl.LINEAR;
@@ -100,7 +148,7 @@ class Title {
         renderer,
         text,
         textColor = "#545050",
-        font = "30px sans-serif",
+        font = "30px Westmount",
     }: TitleProps) {
         autoBind(this);
         this.gl = gl;
@@ -117,7 +165,8 @@ class Title {
             this.gl,
             this.text,
             this.font,
-            this.textColor
+            this.textColor,
+            3 // letterSpacing in px for better readability and line break support
         );
         const geometry = new Plane(this.gl);
         const program = new Program(this.gl, {
@@ -184,7 +233,7 @@ interface MediaProps {
 }
 
 class Media {
-        setHovered(isHovered: boolean) {
+    setHovered(isHovered: boolean) {
         if (this.program && this.program.uniforms.uHovered && this.program.uniforms.uHoverScale) {
             this.program.uniforms.uHovered.value = isHovered ? 1 : 0;
             this.program.uniforms.uHoverScale.value = isHovered ? 0.95 : 1.0;
@@ -259,7 +308,7 @@ class Media {
         this.onResize();
     }
 
-        createShader() {
+    createShader() {
         const texture = new Texture(this.gl, { generateMipmaps: false });
         texture.minFilter = this.gl.LINEAR;
         texture.magFilter = this.gl.LINEAR;
@@ -355,15 +404,15 @@ class Media {
         };
     }
 
-        createMesh() {
+    createMesh() {
         this.plane = new Mesh(this.gl, {
             geometry: this.geometry,
             program: this.program,
         });
         this.plane.setParent(this.scene);
-            }
+    }
 
-        createTitle() {
+    createTitle() {
         this.title = new Title({
             gl: this.gl,
             plane: this.plane,
@@ -374,7 +423,7 @@ class Media {
         });
     }
 
-        update(
+    update(
         scroll: { current: number; last: number },
         direction: "right" | "left"
     ) {
@@ -419,7 +468,7 @@ class Media {
         }
     }
 
-        onResize({
+    onResize({
         screen,
         viewport,
     }: { screen?: ScreenSize; viewport?: Viewport } = {}) {
@@ -491,15 +540,15 @@ class App {
     start: number = 0;
     navigate?: (path: string) => void;
 
-        handleClick(event: MouseEvent) {
+    handleClick(event: MouseEvent) {
         const rect = this.renderer.gl.canvas.getBoundingClientRect();
         const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-                for (const media of this.medias) {
-                        const pos = media.plane.position;
+        for (const media of this.medias) {
+            const pos = media.plane.position;
             const ndcX = pos.x / (this.viewport.width / 2);
             const ndcY = pos.y / (this.viewport.height / 2);
-                        const halfW = media.plane.scale.x / this.viewport.width;
+            const halfW = media.plane.scale.x / this.viewport.width;
             const halfH = media.plane.scale.y / this.viewport.height;
             if (
                 mouseX > ndcX - halfW &&
@@ -524,7 +573,7 @@ class App {
             bend = 1,
             textColor = "#ffffff",
             borderRadius = 0,
-            font = "bold 30px DM Sans",
+            font = "52px Westmount",
             navigate,
         }: AppConfig
     ) {
@@ -796,12 +845,12 @@ export default function Gallery({
     bend = 0,
     textColor = "#ffffff",
     borderRadius = 0.05,
-    font = "bold 30px DM Sans",
+    font = "bold 30px Westmount",
 }: CircularGalleryProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const [selected, setSelected] = useState<null | { route: string; text: string; index: number }>(null);
-    const [overlayPos, setOverlayPos] = useState<{x: number, y: number, width: number, height: number} | null>(null);
+    const [overlayPos, setOverlayPos] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
 
     // fallback to default items if items prop is missing or incomplete
     const defaultItems = [
@@ -809,11 +858,11 @@ export default function Gallery({
         { image: Haraya, text: "Haraya", route: "/Haraya" },
         { image: Laya, text: "Laya", route: "/Laya" },
         { image: ShangSummit, text: "Shang Summit", route: "/ShangSummit" },
-        { image: WackWack, text: "Shang Residences at Wack Wack", route: "/WackWack" },
+        { image: WackWack, text: "Shang Residences at\nWack Wack", route: "/WackWack" },
     ];
     const safeItems = (items && items.every(i => 'route' in i)) ? items : defaultItems;
 
-        const appRef = useRef<App | null>(null);
+    const appRef = useRef<App | null>(null);
     useEffect(() => {
         if (!containerRef.current) return;
         class AppWithClick extends App {
@@ -857,7 +906,7 @@ export default function Gallery({
         };
     }, [safeItems, bend, textColor, borderRadius, font, navigate]);
 
-        useEffect(() => {
+    useEffect(() => {
         let raf: number;
         function updateOverlay() {
             if (selected && appRef.current) {
@@ -891,7 +940,7 @@ export default function Gallery({
         };
     }, [selected]);
 
-        useEffect(() => {
+    useEffect(() => {
         setSelected(null);
         setOverlayPos(null);
     }, [safeItems]);
@@ -899,10 +948,10 @@ export default function Gallery({
     return (
         <div
             className="w-full h-screen bg-[#686058] overflow-hidden cursor-grab active:cursor-grabbing relative pb-8"
-            style={{paddingTop: 0}}
+            style={{ paddingTop: 0 }}
             ref={containerRef}
         >
-                        {selected && overlayPos && (
+            {selected && overlayPos && (
                 <div
                     style={{
                         position: "absolute",
@@ -937,13 +986,13 @@ export default function Gallery({
                     </button>
                 </div>
             )}
-                            <style>{`
+            <style>{`
           .gallery-visit-btn:hover {
             background: #b08b2e;
             color: #fff;
             transform: scale(1.05);
           }
         `}</style>
-    </div>
+        </div>
     );
 }

@@ -1,8 +1,9 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "./lib/styles/App.css";
-import Navbar from "./components/common/Navbar";
+import "./assets/styles/App.css";
+import "./assets/styles/index.css";
+import Navbar from "./components/shared/Navbar";
 import ScrollToTop from "./components/ScrollToTop";
 
 const App = () => {

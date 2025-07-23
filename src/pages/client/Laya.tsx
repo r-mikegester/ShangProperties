@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 import Contact from "../../components/layout/client/Contact";
 import InquireSheet from "../../components/InquireSheet";
 import { useState } from "react";
-import Footer from "../../components/common/Footer";
+import Footer from "../../components/shared/Footer";
 import profile from "../../assets/imgs/profile/VeneziaEspiritu.jpg";
 import { LayoutGrid } from "../../components/LayoutGrid";
 import FullscreenImage from "../../components/FullscreenImage";

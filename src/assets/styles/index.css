@@ -1,0 +1,55 @@
+@import "tailwindcss";
+@import url('https://fonts.cdnfonts.com/css/westmount');
+
+.westmount {
+  font-family: 'Westmount', serif !important;
+  font-weight: 400;
+  font-style: normal;
+}
+
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
+.castoro-titling-regular {
+  font-family: "Castoro Titling", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+html,
+body {
+  background-color: #fff !important;
+}
+
+/* Themed Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  background: #686058;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b08b2e;
+  border-radius: 6px;
+  border: 3px solid #f5f5f5;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8a6c1d;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b08b2e #f5f5f5;
+}
+
+/* Hide horizontal scrollbar for custom class */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -3,13 +3,12 @@
 import { useEffect, useRef } from "react";
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
-
-import Footer from "../../common/Footer";
+import Footer from "../../shared/Footer";
 import Contact from "./Contact";
-// import Card from "../components/Card";
 import Hero from "./Hero";
-import Gallery from "./Gallery";
+// import Gallery from "./Gallery";
 import FloatingContactButton from "../../FloatingContactButton";
+import { AppleCardsCarouselDemo } from "../../FeaturedProjects";
 
 const Home = () => {
     const imageRef = useRef<HTMLImageElement>(null);
@@ -38,8 +37,8 @@ const Home = () => {
     return (
         <div className="h-full">
             <Hero imageRef={imageRef} />
-            <div className="text-white bg-[#686058] pt-10 text-center text-5xl font-semibold castoro-titling-regular">FEATURED PROJECTS</div>
-            <Gallery items={[]} />
+            <AppleCardsCarouselDemo />
+            {/* <Gallery items={[]} /> */}
             <Contact />
             <FloatingContactButton />
             <Footer />
