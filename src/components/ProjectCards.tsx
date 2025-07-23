@@ -260,8 +260,8 @@ export const Card = ({
             }
             onClick={() => setShowButton(true)}
         >
-            {/* Overlay Gradient */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
+            {/* Overlay Gradient: Vignette from bottom to transparent for contrast */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-full bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
             {/* Card Image */}
             <BlurImage
                 src={card.src}
@@ -272,13 +272,13 @@ export const Card = ({
             <div className="relative z-40 w-full px-6 pb-6 pt-2 mt-auto">
                 <motion.p
                     layoutId={layout ? `category-${card.category}` : undefined}
-                    className="text-left text-xs font-medium text-gray-500 md:text-sm Westmount"
+                    className="text-left text-xs font-medium text-[#b08b2e] md:text-sm Westmount"
                 >
                     {card.category}
                 </motion.p>
                 <motion.p
                     layoutId={layout ? `title-${card.title}` : undefined}
-                    className="max-w-xs w-56 text-left text-xl font-bold westmount md:text-2xl"
+                    className="max-w-xs w-56 md:w-72 text-left text-xl font-bold westmount md:text-2xl"
                 >
                     {card.title}
                 </motion.p>
@@ -298,7 +298,7 @@ export const Card = ({
                             to={card.route}
                             onClick={e => e.stopPropagation()}
                         >
-                            Visit {card.title}
+                            View Details
                         </Link>
                     </motion.div>
                 )}

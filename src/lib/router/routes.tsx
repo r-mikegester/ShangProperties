@@ -6,7 +6,7 @@ import NotFound from "../../components/NotFound";
  import { LoadingScreen } from "../../components/shared";
 
 // Lazy-loaded pages
-const Home = lazy(() => import("../../components/layout/client/Home"));
+const Home = lazy(() => import("../../layouts/ClientLayout"));
 const Haraya = lazy(() => import("../../pages/client/Haraya"));
 const Aurelia = lazy(() => import("../../pages/client/Aurelia"));
 const Laya = lazy(() => import("../../pages/client/Laya"));
