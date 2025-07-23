@@ -5,6 +5,7 @@ import React, {
     createContext,
     JSX,
 } from "react";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "../lib/utils/utils";
 import { Icon } from "@iconify/react";
@@ -292,13 +293,13 @@ export const Card = ({
                         transition={{ type: "spring", stiffness: 300, damping: 30, duration: 0.3 }}
                         className="absolute bottom-3 left-0 w-full flex justify-center z-50 px-3"
                     >
-                        <a
+                        <Link
                             className="px-6 py-2 rounded-2xl bg-white active:scale-90 text-gray-900 font-semibold shadow-lg hover:bg-[#b08b2e] hover:text-white transition-colors duration-150 westmount"
-                            href={card.route}
+                            to={card.route}
                             onClick={e => e.stopPropagation()}
                         >
                             Visit {card.title}
-                        </a>
+                        </Link>
                     </motion.div>
                 )}
             </AnimatePresence>
