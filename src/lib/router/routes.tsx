@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import App from "../../App";
 import ProtectedRoute from "../../lib/router/ProtectedRoute";
 import NotFound from "../../components/NotFound";
- import { LoadingScreen } from "../../components/common";
+ import { LoadingScreen } from "../../components/shared";
 
 // Lazy-loaded pages
 const Home = lazy(() => import("../../components/layout/client/Home"));

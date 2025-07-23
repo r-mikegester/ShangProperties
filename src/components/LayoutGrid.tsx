@@ -11,7 +11,7 @@ import { Icon } from "@iconify/react";
 // import Carousel from "./Carousel";
 import projects from "../lib/data/featuredProjects";
 import { cn } from "../lib/utils/utils";
-import SkeletonImage from "./common/SkeletonImage";
+import SkeletonImage from "./shared/SkeletonImage";
 
 type Card = {
   id: number;

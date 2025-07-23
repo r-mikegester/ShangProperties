@@ -1,5 +1,5 @@
 import React, { ReactNode, useEffect, useState } from "react";
-import LoadingScreen from "../../components/common/LoadingScreen";
+import LoadingScreen from "../../components/shared/LoadingScreen";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";

@@ -27,7 +27,7 @@ const FloatingContactButton: React.FC = () => {
             animate={{ opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 400, damping: 22 } }}
             exit={{ opacity: 0, scale: 0.7, y: 30, transition: { duration: 0.2 } }}
             onClick={() => setOpen(true)}
-            className="fixed right-6 bottom-6 z-[2999] bg-gradient-to-br from-[#AD8A19] to-[#686058] text-white border-none rounded-full w-16 h-16 shadow-lg cursor-pointer outline-none transition-transform duration-200 text-3xl flex items-center justify-center animate-float-bounce"
+            className="fixed right-6 bottom-6 z-[2999] bg-gradient-to-br from-[#AD8A19] to-bg-[#B08B2E] text-white border-none rounded-full w-16 h-16 shadow-lg cursor-pointer outline-none transition-transform duration-200 text-3xl flex items-center justify-center animate-float-bounce"
             aria-label="Contact"
             type="button"
           >
