@@ -3,14 +3,14 @@
 import { useEffect, useRef } from "react";
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
-import Footer from "../../shared/Footer";
-import Contact from "./Contact";
-import Hero from "./Hero";
+import Footer from "../components/shared/Footer";
+import Contact from "../components/layout/client/Contact";
+import Hero from "../components/layout/client/Hero";
 // import Gallery from "./Gallery";
-import FloatingContactButton from "../../FloatingContactButton";
-import { AppleCardsCarouselDemo } from "../../FeaturedProjects";
+import FloatingContactButton from "../components/FloatingContactButton";
+import { AppleCardsCarouselDemo } from "../components/FeaturedProjects";
 
-const Home = () => {
+const ClientLayout = () => {
     const imageRef = useRef<HTMLImageElement>(null);
 
     useEffect(() => {
@@ -46,4 +46,4 @@ const Home = () => {
     );
 };
 
-export default Home;
+export default ClientLayout;
