@@ -260,8 +260,16 @@ export const Card = ({
             }
             onClick={() => setShowButton(true)}
         >
-            {/* Card Title and Category at the Top */}
-            <div className="relative z-40 w-full px-6 pt-6 pb-2">
+            {/* Overlay Gradient */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
+            {/* Card Image */}
+            <BlurImage
+                src={card.src}
+                alt={card.title}
+                className="absolute inset-0 z-10 object-cover"
+            />
+            {/* Card Title and Category at the Bottom */}
+            <div className="relative z-40 w-full px-6 pb-6 pt-2 mt-auto">
                 <motion.p
                     layoutId={layout ? `category-${card.category}` : undefined}
                     className="text-left text-xs font-medium text-gray-500 md:text-sm Westmount"
@@ -275,14 +283,6 @@ export const Card = ({
                     {card.title}
                 </motion.p>
             </div>
-            {/* Overlay Gradient */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
-            {/* Card Image */}
-            <BlurImage
-                src={card.src}
-                alt={card.title}
-                className="absolute inset-0 z-10 object-cover"
-            />
             {/* Visit Button at the bottom, only when clicked */}
             <AnimatePresence>
                 {showButton && (
@@ -291,7 +291,7 @@ export const Card = ({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 24 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30, duration: 0.3 }}
-                        className="absolute bottom-3 left-0 w-full flex justify-center z-50 px-3"
+                        className="absolute bottom-20 left-0 w-full flex justify-center z-50 px-3"
                     >
                         <Link
                             className="px-6 py-2 rounded-2xl bg-white active:scale-90 text-gray-900 font-semibold shadow-lg hover:bg-[#b08b2e] hover:text-white transition-colors duration-150 westmount"
