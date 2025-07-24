@@ -4,7 +4,7 @@ import { auth } from "../../lib/firebase/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { Sidebar, SidebarBody, SidebarLink } from "../../components/Sidebar";
 import { motion } from "motion/react";
-import { cn } from "../../lib/utils/utils";
+import { cn } from "../../utils/utils";
 import profile from "../../assets/imgs/profile/VeneziaEspiritu.jpg";
 import { Icon } from '@iconify/react';
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
@@ -15,7 +15,7 @@ import {
   PROJECTS_ROUTE,
   INQUIRIES_ROUTE,
   PAGE_MANAGEMENT_ROUTE,
-} from "../../lib/router/routePaths";
+} from "../../router/routePaths";
 
 const links = [
   {

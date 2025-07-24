@@ -1,12 +1,12 @@
-import ShangSummit from "../../../assets/imgs/projects/shangsummit/ShangSummit.webp";
-import SSBallroomAlfresco from "../../../assets/imgs/projects/shangsummit/BallroomAlfresco.webp";
-import SSBallroomAlfresco2 from "../../../assets/imgs/projects/shangsummit/BallroomAlfresco2.webp";
-import SSFitness1 from "../../../assets/imgs/projects/shangsummit/Fitness1.webp";
-import SSFitness2 from "../../../assets/imgs/projects/shangsummit/Fitness2.webp";
-import SSFamilyGameroom1 from "../../../assets/imgs/projects/shangsummit/L11_FamilyGameRoom1.webp";
-import SSFamilyGameroom2 from "../../../assets/imgs/projects/shangsummit/L11_FamilyGameRoom2.webp";
-import SSFamilyGameroom3 from "../../../assets/imgs/projects/shangsummit/L11_FamilyGameRoom3.webp";
-import SSPoolDeck from "../../../assets/imgs/projects/shangsummit/PoolDeck1.webp";
+import ShangSummit from "../../assets/imgs/projects/shangsummit/ShangSummit.webp";
+import SSBallroomAlfresco from "../../assets/imgs/projects/shangsummit/BallroomAlfresco.webp";
+import SSBallroomAlfresco2 from "../../assets/imgs/projects/shangsummit/BallroomAlfresco2.webp";
+import SSFitness1 from "../../assets/imgs/projects/shangsummit/Fitness1.webp";
+import SSFitness2 from "../../assets/imgs/projects/shangsummit/Fitness2.webp";
+import SSFamilyGameroom1 from "../../assets/imgs/projects/shangsummit/L11_FamilyGameRoom1.webp";
+import SSFamilyGameroom2 from "../../assets/imgs/projects/shangsummit/L11_FamilyGameRoom2.webp";
+import SSFamilyGameroom3 from "../../assets/imgs/projects/shangsummit/L11_FamilyGameRoom3.webp";
+import SSPoolDeck from "../../assets/imgs/projects/shangsummit/PoolDeck1.webp";
 
 const ShangSummitProject = {
     id: 2,

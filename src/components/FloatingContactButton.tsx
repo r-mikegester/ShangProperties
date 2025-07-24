@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Contact from './layout/client/Contact';
+import Contact from './client/Contact';
 import InquireSheet from './InquireSheet';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
