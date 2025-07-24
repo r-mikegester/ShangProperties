@@ -1,6 +1,6 @@
 import React, { RefObject, useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import bgimg from "../../../assets/imgs/banners/HeroBanner.webp";
+import bgimg from "../../assets/imgs/banners/HeroBanner.webp";
 
 interface HeroProps {
   imageRef: RefObject<HTMLImageElement | null>;

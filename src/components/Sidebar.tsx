@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "../lib/utils/utils";
+import { cn } from "../utils/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Icon } from "@iconify/react";

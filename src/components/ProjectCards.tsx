@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { cn } from "../lib/utils/utils";
+import { cn } from "../utils/utils";
 import { Icon } from "@iconify/react";
 
 interface CarouselProps {
