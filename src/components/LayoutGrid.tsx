@@ -9,7 +9,7 @@ SwiperCore.use([Autoplay]);
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 // import Carousel from "./Carousel";
-import projects from "../lib/data/featuredProjects";
+import projects from "../data/ProjectsIndex";
 import { cn } from "../utils/utils";
 import SkeletonImage from "./shared/SkeletonImage";
 
