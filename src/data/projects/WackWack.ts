@@ -1,13 +1,13 @@
-import WackWack from "../../../assets/imgs/projects/wackwack/facade_evening.webp";
-import SWWGym from "../../../assets/imgs/projects/wackwack/SWW_Gym.webp";
-import SWWLobby from "../../../assets/imgs/projects/wackwack/SWW_Lobby.webp";
-import SWWLounge from "../../../assets/imgs/projects/wackwack/SWW_Lounge.webp";
-import SWWPoolArea from "../../../assets/imgs/projects/wackwack/SWW_PoolArea.webp";
-import SWWGolfArea from "../../../assets/imgs/projects/wackwack/SWW_GolfArea.webp";
-import SWWGarden from "../../../assets/imgs/projects/wackwack/SWW_Garden.webp";
-import SWWDropOff from "../../../assets/imgs/projects/wackwack/SWW_DropOff.webp";
-import SWWPlayroom from "../../../assets/imgs/projects/wackwack/SWW_Playroom.webp";
-import SWWFunctionArea from "../../../assets/imgs/projects/wackwack/SWW_FunctionArea.webp";
+import WackWack from "../../assets/imgs/projects/wackwack/facade_evening.webp";
+import SWWGym from "../../assets/imgs/projects/wackwack/SWW_Gym.webp";
+import SWWLobby from "../../assets/imgs/projects/wackwack/SWW_Lobby.webp";
+import SWWLounge from "../../assets/imgs/projects/wackwack/SWW_Lounge.webp";
+import SWWPoolArea from "../../assets/imgs/projects/wackwack/SWW_PoolArea.webp";
+import SWWGolfArea from "../../assets/imgs/projects/wackwack/SWW_GolfArea.webp";
+import SWWGarden from "../../assets/imgs/projects/wackwack/SWW_Garden.webp";
+import SWWDropOff from "../../assets/imgs/projects/wackwack/SWW_DropOff.webp";
+import SWWPlayroom from "../../assets/imgs/projects/wackwack/SWW_Playroom.webp";
+import SWWFunctionArea from "../../assets/imgs/projects/wackwack/SWW_FunctionArea.webp";
 
 
 const WackWackProject = {

@@ -9,8 +9,8 @@ SwiperCore.use([Autoplay]);
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 // import Carousel from "./Carousel";
-import projects from "../lib/data/featuredProjects";
-import { cn } from "../lib/utils/utils";
+import projects from "../data/ProjectsIndex";
+import { cn } from "../utils/utils";
 import SkeletonImage from "./shared/SkeletonImage";
 
 type Card = {

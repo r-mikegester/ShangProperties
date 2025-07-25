@@ -1,5 +1,5 @@
 import { Carousel, Card } from "./ProjectCards";
-import projects from "../lib/data/featuredProjects";
+import projects from "../data/ProjectsIndex";
 
 const projectRoutes: Record<string, string> = {
   "Laya": "/Laya",

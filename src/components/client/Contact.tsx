@@ -8,9 +8,9 @@ import countryList from 'react-select-country-list';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Stepper, { Step, StepperRef } from "../../Stepper";
+import Stepper, { Step, StepperRef } from "../Stepper";
 import React from "react";
-import projects from '../../../lib/data/featuredProjects';
+import projects from '../../data/ProjectsIndex';
 import Select from 'react-select';
 
 const accent = '#b08b2e';

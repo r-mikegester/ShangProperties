@@ -1,21 +1,20 @@
 import { useEffect, useState, useRef } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { auth } from "../../lib/firebase/firebase";
+import { auth, firestore } from "../../firebase/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { Sidebar, SidebarBody, SidebarLink } from "../../components/Sidebar";
 import { motion } from "motion/react";
-import { cn } from "../../lib/utils/utils";
+import { cn } from "../../utils/utils";
 import profile from "../../assets/imgs/profile/VeneziaEspiritu.jpg";
 import { Icon } from '@iconify/react';
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
-import { firestore } from "../../lib/firebase/firebase";
 import { toast } from "react-toastify";
 import {
   DASHBOARD_ROUTE,
   PROJECTS_ROUTE,
   INQUIRIES_ROUTE,
   PAGE_MANAGEMENT_ROUTE,
-} from "../../lib/router/routePaths";
+} from "../../router/routePaths";
 
 const links = [
   {
