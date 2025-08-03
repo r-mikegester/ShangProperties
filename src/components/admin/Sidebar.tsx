@@ -203,7 +203,7 @@ const Logo = () => {
       layout
       className="grid size-10 shrink-0 place-content-center rounded-lg bg-[#b08b2e]"
     >
-      <img src={Venezia} alt="Logo" className="h-8 w-8 object-cover rounded-md" />
+      <img src="https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/VeneziaEspiritu.jpg" alt="Logo" className="h-8 w-8 object-cover rounded-md" />
     </motion.div>
   );
 };
