@@ -13,6 +13,7 @@ const Aurelia = lazy(() => import("../pages/client/Aurelia"));
 const Laya = lazy(() => import("../pages/client/Laya"));
 const ShangSummit = lazy(() => import("../pages/client/ShangSummit"));
 const WackWack = lazy(() => import("../pages/client/WackWack"));
+const ProjectDetail = lazy(() => import("../pages/client/ProjectDetail"));
 const Dashboard = lazy(() => import("../pages/admin/Dashboard"));
 const Projects = lazy(() => import("../pages/admin/Projects"));
 const Inquiries = lazy(() => import("../pages/admin/Inquiries"));
@@ -34,6 +35,7 @@ const AppRoutes = () => {
             <Route path="/Laya" element={<Laya />} />
             <Route path="/WackWack" element={<WackWack />} />
             <Route path="/ShangSummit" element={<ShangSummit />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
             {/* Admin routes with sidebar */}
             <Route
               path="/dashboard"
