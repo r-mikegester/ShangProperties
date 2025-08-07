@@ -1,75 +1,108 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Icon } from '@iconify/react';
+import { NavLink, useLocation } from "react-router-dom";
+import { Icon } from "@iconify/react";
+import { motion } from "framer-motion";
 
-const adminLinks = [
-    {
-        title: "Dashboard",
-        path: "/dashboard",
-        icon: "solar:chat-square-2-broken",
-    },
-    {
-        title: "Projects",
-        path: "/dashboard/projects",
-        icon: "solar:inbox-archive-broken",
-    },
-    {
-        title: "Inquiries",
-        path: "/dashboard/inquiries",
-        icon: "solar:letter-broken",
-    },
-    {
-        title: "Page Management",
-        path: "/dashboard/page-management",
-        icon: "solar:feed-broken",
-    },
+const sidebarLinks = [
+  {
+    title: "Dashboard",
+    icon: "solar:chat-square-2-broken",
+    to: "/dashboard",
+    isLogout: false,
+  },
+  {
+    title: "Inquiries",
+    icon: "solar:letter-broken",
+    to: "/dashboard/inquiries",
+    isLogout: false,
+  },
+  {
+    title: "Projects",
+    icon: "solar:inbox-archive-broken",
+    to: "/dashboard/projects",
+    isLogout: false,
+  },
+  {
+    title: "Pages",
+    icon: "solar:feed-broken",
+    to: "/dashboard/page-management",
+    isLogout: false,
+  },
+  // {
+  //   title: "Log out",
+  //   icon: "mdi:logout",
+  //   to: "#logout",
+  //   isLogout: true,
+  // },
 ];
 
-export function Dock() {
-    const location = useLocation();
-    const navigate = useNavigate();
+const Dock: React.FC = () => {
+  const location = useLocation();
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.location.href = "/";
+  };
 
-    // Only show dock on mobile (hidden on md and up)
-    return (
-        <div className="fixed bottom-3 left-0 right-0 z-50 md:hidden">
-            <div className="relative w-full">
-                <div className="-translate-x-1/2 absolute bottom-0 left-1/2 mx-auto max-w-full transform-gpu pt-4">
-                    <div className="relative ">
-                        <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-20 p-2 max-w-full rounded-3xl border border-gray-200/60 bg-gray-200/60 shadow-2xs dark:border-gray-600/60 dark:bg-gray-800/60" />
-                        <div className="flex items-center  overflow-x-auto rounded-3xl p-2 bg-red-500">
-                            {adminLinks.map((link) => (
-                                <DockIcon
-                                    key={link.title}
-                                    icon={link.icon}
-                                    label={link.title}
-                                    active={location.pathname.startsWith(link.path)}
-                                    onClick={() => navigate(link.path)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function DockIcon({ icon, label, active, onClick }: { icon: string; label: string; active: boolean; onClick: () => void }) {
-    return (
-        <button
-            className={`group z-20 grid w-fit place-items-center p-2 pl-0 focus:outline-none ${active ? 'scale-110' : ''}`}
-            onClick={onClick}
-            aria-label={label}
-            type="button"
+  return (
+    <nav className="fixed bottom-4 left-1/2 z-[3000] -translate-x-1/2 flex gap-2 px-2 py-2 bg-[#B08B2E]/40 backdrop-blur-md rounded-2xl shadow-2xl border border-[#B08B2E]"
+      style={{ boxShadow: "0 8px 32px 0 rgba(34, 34, 34, 0.18)" }}
+    >
+      {sidebarLinks.map(({ icon, title, to, isLogout }) => (
+        <motion.div
+          key={title}
+          whileHover={{ scale: 1.25, y: -10, boxShadow: "0 8px 24px 0 rgba(176,139,46,0.18)" }}
+          whileTap={{ scale: 0.95 }}
+          className="flex flex-col items-center justify-center cursor-pointer group relative"
         >
-            <div
-                className={`pointer-events-none z-20 inline size-14 transform-gpu overflow-hidden rounded-2xl bg-white shadow-inner transition-all duration-200 group-hover:size-[4rem] group-hover:shadow-2xs ${active ? 'ring-2 ring-[#b08b2e]' : ''}`}
+          {isLogout ? (
+            <button
+              onClick={handleLogout}
+              className="flex flex-col items-center justify-center text-red-600 hover:text-red-800 focus:outline-none"
+              aria-label="Log out"
             >
-                <Icon icon={icon} width={40} height={40} className="mx-auto" />
-            </div>
-            {/* Label removed for icon-only dock */}
-        </button>
-    );
-}
+              <Icon icon="solar:logout-3-broken" className="size-10" />
+              <span className="text-[10px] mt-1 font-medium">Log out</span>
+            </button>
+          ) : (
+            <NavLink
+              to={to}
+              end={to === "/dashboard"}
+              className={({ isActive }) =>
+                `flex flex-col items-center w-20 justify-center p-2 rounded-xl transition-colors ${
+                  isActive ? "bg-white/50 text-[#68521c]" : "text-[#68521c]"
+                }`
+              }
+              aria-label={title}
+            >
+              {({ isActive }) => (
+                <>
+                  <motion.div
+                    animate={{ y: isActive ? 0 : 0 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    className="flex items-center justify-center"
+                  >
+                    <Icon icon={icon} width={28} height={28} />
+                  </motion.div>
+                  {isActive && (
+                    <motion.span
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      transition={{ duration: 0.25, type: "spring", stiffness: 300 }}
+                      className="text-[10px] font-medium"
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      {title}
+                    </motion.span>
+                  )}
+                </>
+              )}
+            </NavLink>
+          )}
+        </motion.div>
+      ))}
+    </nav>
+  );
+};
 
 export default Dock;
