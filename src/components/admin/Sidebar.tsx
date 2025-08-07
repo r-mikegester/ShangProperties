@@ -2,7 +2,6 @@ import React, { useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
-import Venezia from "../../assets/imgs/profile/VeneziaEspiritu.jpg";
 
 const sidebarLinks = [
   {
