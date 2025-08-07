@@ -1,25 +1,31 @@
+import { useEffect, useState } from "react";
 import { Carousel, Card } from "./ProjectCards";
-import projects from "../data/ProjectsIndex";
-
-const projectRoutes: Record<string, string> = {
-  "Laya": "/Laya",
-  "Haraya": "/Haraya",
-  "Aurelia": "/Aurelia",
-  "WackWack": "/WackWack",
-  "ShangSummit": "/ShangSummit",
-};
-
-const data = projects.map((project: any) => ({
-  category: project.project_type || "Project",
-  title: project.formalName || project.title,
-  src: project.image,
-  content: null, // No dummy content
-  route: projectRoutes[project.title] || '/',
-}));
+import { db } from "../firebase/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
 
 export function AppleCardsCarouselDemo() {
-  const cards = data.map((card, index) => (
-    <Card key={card.src} card={card} index={index} />
+  const [projects, setProjects] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "projects"), (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setProjects(data);
+    });
+    return () => unsub();
+  }, []);
+
+  const cards = projects.map((project, index) => (
+    <Card
+      key={project.id}
+      card={{
+        category: project.project_type || "Project",
+        title: project.formalName || project.title,
+        src: project.image,
+        content: null,
+        route: `/projects/${project.id}`,
+      }}
+      index={index}
+    />
   ));
 
   return (
