@@ -80,7 +80,7 @@ const Dashboard: React.FC = () => {
   }, [subscribe, fetchInquiries, fetchVisits]);
 
   return (
-    <div className=" max-w-full w-full p-3 box-border">
+    <div className=" max-w-full w-full p-3 pb-20 md:pb-3 box-border">
       <div className="grid grid-cols-2 md:grid-cols-6 grid-rows-[2rem,auto,auto,auto] gap-4 min-h-0 md:h-screen">
         {/* 1 */}
         <div className="bg-white rounded-lg shadow p-3 flex flex-row items-center justify-between cols-span-1 md:col-span-2 row-span-1">
