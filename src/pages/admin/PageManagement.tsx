@@ -1,12 +1,27 @@
 import React from "react";
+import HeroEditor from "../../components/admin/HeroEditor";
+import ContactEditor from "../../components/admin/ContactEditor";
+import FooterEditor from "../../components/admin/FooterEditor";
 
-const PageManagement = () => {
+const PageManagement: React.FC = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-2xl flex flex-col items-center">
-        <h1 className="text-4xl font-bold mb-4 castoro-titling-regular text-[#b08b2e]">Page Management</h1>
-        <p className="mb-6 text-lg text-gray-700">This is the Page Management page. Here you can manage the content and settings of your site pages.</p>
-      </div>
+    <div className="max-w-5xl mx-auto p-6 space-y-8">
+      <h1 className="text-3xl font-bold text-[#b08b2e] mb-6">Homepage Management</h1>
+      {/* Hero Section Editor */}
+      <section className="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-[#b08b2e]">Hero Section</h2>
+        <HeroEditor />
+      </section>
+      {/* Contact Section Editor */}
+      <section className="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-[#b08b2e]">Contact Section</h2>
+        <ContactEditor />
+      </section>
+      {/* Footer Section Editor */}
+      <section className="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-[#b08b2e]">Footer Section</h2>
+        <FooterEditor />
+      </section>
     </div>
   );
 };
