@@ -5,6 +5,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import NotFound from "../components/NotFound";
 import { LoadingScreen } from "../components/shared";
 import AdminLayout from "../layouts/AdminLayout";
+import { DashboardStatsProvider } from "../context/DashboardStatsContext";
 
 // Lazy-loaded pages
 const Home = lazy(() => import("../layouts/ClientLayout"));
@@ -16,6 +17,7 @@ const WackWack = lazy(() => import("../pages/client/WackWack"));
 const ProjectDetail = lazy(() => import("../pages/client/ProjectDetail"));
 const Dashboard = lazy(() => import("../pages/admin/Dashboard"));
 const Projects = lazy(() => import("../pages/admin/Projects"));
+const Projects2Management = lazy(() => import("../pages/admin/Projects2Management"));
 const Inquiries = lazy(() => import("../pages/admin/Inquiries"));
 const PageManagement = lazy(() => import("../pages/admin/PageManagement"));
 
@@ -41,12 +43,15 @@ const AppRoutes = () => {
               path="/dashboard"
               element={
                 <ProtectedRoute allowedEmails={ADMIN_EMAILS}>
-                  <AdminLayout />
+                  <DashboardStatsProvider>
+                    <AdminLayout />
+                  </DashboardStatsProvider>
                 </ProtectedRoute>
               }
             >
               <Route index element={<Dashboard />} />
               <Route path="projects" element={<Projects />} />
+              <Route path="projects2" element={<Projects2Management />} />
               <Route path="inquiries" element={<Inquiries />} />
               <Route path="page-management" element={<PageManagement />} />
             </Route>
