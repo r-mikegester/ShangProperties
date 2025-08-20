@@ -90,6 +90,8 @@ export const AdminLayout: React.FC = () => {
       params.set("archived", "true");
     }
     navigate(`${location.pathname}?${params.toString()}`);
+    // Dispatch event for Projects component
+    window.dispatchEvent(new CustomEvent('projectToggleArchiveRequested'));
   };
 
   // Handle inquiries archive toggle
@@ -158,6 +160,12 @@ export const AdminLayout: React.FC = () => {
     window.dispatchEvent(new CustomEvent('pageRefreshRequested'));
   };
 
+  // Handle project add
+  const handleProjectAdd = () => {
+    // Dispatch a custom event that the Projects component can listen to
+    window.dispatchEvent(new CustomEvent('projectAddRequested'));
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {!isMobile && <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />}
@@ -166,6 +174,7 @@ export const AdminLayout: React.FC = () => {
           toolbarActions={undefined}
           onRefresh={refreshDashboard}
           onProjectToggleArchive={handleProjectToggleArchive}
+          onProjectAdd={handleProjectAdd}
           isProjectArchive={isProjectArchive}
           onInquiriesArchive={handleInquiriesToggleArchive}
           isInquiriesArchiveView={isInquiriesArchive}

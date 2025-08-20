@@ -315,7 +315,15 @@ const NavBar: React.FC<NavBarProps> = ({
 
         {context === "projects" && (
           <div className="flex items-center gap-2">
-                        <button
+            <button
+              type="button"
+              aria-label="Add project"
+              className="p-2 rounded-lg bg-[#b08b2e] text-white hover:bg-[#a07a1e] transition shadow"
+              onClick={onProjectAdd}
+            >
+              <Icon icon="solar:add-circle-broken" width={22} height={22} />
+            </button>
+            <button
               type="button"
               aria-label={isProjectArchive ? "Show projects" : "Show archive"}
               className={`p-2 rounded-lg transition shadow ${

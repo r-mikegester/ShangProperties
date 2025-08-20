@@ -521,6 +521,32 @@ const Projects: React.FC = () => {
     };
   }, [setToolbarState, resetToolbarState, showArchive]);
 
+  // Listen for projectAddRequested event
+  useEffect(() => {
+    const handleProjectAdd = () => {
+      setAddMode(true);
+      setSelectedId(null);
+      setAddData(emptyProject);
+    };
+
+    window.addEventListener('projectAddRequested', handleProjectAdd);
+    return () => {
+      window.removeEventListener('projectAddRequested', handleProjectAdd);
+    };
+  }, []);
+
+  // Listen for projectToggleArchiveRequested event
+  useEffect(() => {
+    const handleProjectToggleArchive = () => {
+      setShowArchive(v => !v);
+    };
+
+    window.addEventListener('projectToggleArchiveRequested', handleProjectToggleArchive);
+    return () => {
+      window.removeEventListener('projectToggleArchiveRequested', handleProjectToggleArchive);
+    };
+  }, []);
+
   // Keep toolbar in sync
   useEffect(() => {
     setToolbarState({ isProjectArchive: showArchive });
