@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { put } from '@vercel/blob';
 import { Icon } from "@iconify/react";
+import { useOutletContext } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FooterContent {
   logoUrl: string;
@@ -20,9 +22,10 @@ interface FooterContent {
 interface SectionEditorProps<T> {
   initialData: T;
   onSave: (data: T) => Promise<void>;
+  isEditing?: boolean;
 }
 
-const FooterEditor: React.FC<SectionEditorProps<FooterContent>> = ({ initialData, onSave }) => {
+const FooterEditor: React.FC<SectionEditorProps<FooterContent>> = ({ initialData, onSave, isEditing }) => {
   const [data, setData] = useState(initialData);
   const [saving, setSaving] = useState(false);
   const [logoFilename, setLogoFilename] = useState<string>("");
@@ -31,6 +34,11 @@ const FooterEditor: React.FC<SectionEditorProps<FooterContent>> = ({ initialData
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   // Add state for new social link
   const [newSocialLink, setNewSocialLink] = useState({ label: '', url: '', icon: '' });
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  
+  // Get the editing state from the outlet context
+  const { isPageEditing } = useOutletContext<{ isPageEditing: boolean }>();
+  const effectiveIsEditing = isEditing !== undefined ? isEditing : isPageEditing;
 
   // Default base URL for images
   const DEFAULT_BASE_URL = "https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/";
@@ -390,6 +398,85 @@ const FooterEditor: React.FC<SectionEditorProps<FooterContent>> = ({ initialData
     }
   };
 
+  // Custom input component with animations
+  const AnimatedInput = ({ 
+    id, 
+    label, 
+    value, 
+    onChange, 
+    placeholder, 
+    type = "text",
+    readOnly = false,
+    textarea = false,
+    rows
+  }: {
+    id: string;
+    label: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+    placeholder?: string;
+    type?: string;
+    readOnly?: boolean;
+    textarea?: boolean;
+    rows?: number;
+  }) => {
+    const InputComponent = textarea ? "textarea" : "input";
+    
+    return (
+      <div className="mb-6 relative">
+        <motion.label
+          htmlFor={id}
+          className="block text-sm font-medium text-gray-700 mb-1"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {label}
+        </motion.label>
+        
+        <div className="relative">
+          <motion.div
+            className="absolute inset-0 bg-[#b08b2e] rounded-lg shadow-lg"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          />
+          
+          <InputComponent
+            id={id}
+            name={id}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            type={type}
+            readOnly={readOnly}
+            rows={rows}
+            className={`relative block w-full px-4 py-3 rounded-lg border-0 bg-white focus:outline-none focus:ring-2 focus:ring-[#b08b2e] placeholder-gray-400 transition-all duration-300 ${
+              textarea ? 'min-h-[100px]' : ''
+            }`}
+            onFocus={() => setFocusedField(id)}
+            onBlur={() => setFocusedField(null)}
+          />
+          
+          {focusedField === id && (
+            <motion.div
+              className="absolute -inset-0.5 rounded-lg bg-[#b08b2e] opacity-20"
+              initial={{ scale: 1 }}
+              animate={{ 
+                scale: [1, 1.02, 1],
+              }}
+              transition={{ 
+                duration: 1.5,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Live Preview - on top for mobile, on right for desktop */}
@@ -516,7 +603,12 @@ Philippines`}
       </div>
 
       {/* Edit Form - on bottom for mobile, on left for desktop */}
-      <div className="space-y-4 w-full lg:w-full lg:order-2">
+      <motion.div 
+        className="space-y-4 w-full lg:w-full lg:order-2 bg-white rounded-xl shadow-lg p-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         {/* Logo Uploads in a Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Main Footer Logo */}
@@ -532,18 +624,20 @@ Philippines`}
                     alt="Logo Preview" 
                     className="h-32 w-full object-contain rounded"
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setData(prev => ({ ...prev, logoUrl: "" }));
-                      setLogoFilename("");
-                    }}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
-                      <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
-                    </svg>
-                  </button>
+                  {effectiveIsEditing && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setData(prev => ({ ...prev, logoUrl: "" }));
+                        setLogoFilename("");
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
+                      </svg>
+                    </button>
+                  )}
                 </>
               ) : (
                 <div className="text-center text-gray-500">
@@ -554,12 +648,15 @@ Philippines`}
                   <p className="text-sm">No file selected</p>
                 </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
+              {effectiveIsEditing && (
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={!effectiveIsEditing}
+                />
+              )}
             </div>
             <div>
               <input
@@ -568,6 +665,7 @@ Philippines`}
                 onChange={handleLogoFilenameChange}
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
                 placeholder="logo.webp"
+                readOnly={!effectiveIsEditing}
               />
               <p className="text-xs text-gray-500 mt-1">Enter just the filename</p>
             </div>
@@ -586,18 +684,20 @@ Philippines`}
                     alt="Kuok Group Logo Preview" 
                     className="h-32 w-full object-contain rounded"
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setData(prev => ({ ...prev, kuokGroupLogoUrl: "" }));
-                      setKuokGroupLogoFilename("");
-                    }}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
-                      <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
-                    </svg>
-                  </button>
+                  {effectiveIsEditing && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setData(prev => ({ ...prev, kuokGroupLogoUrl: "" }));
+                        setKuokGroupLogoFilename("");
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
+                      </svg>
+                    </button>
+                  )}
                 </>
               ) : (
                 <div className="text-center text-gray-500">
@@ -608,12 +708,15 @@ Philippines`}
                   <p className="text-sm">No file selected</p>
                 </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleKuokGroupLogoUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
+              {effectiveIsEditing && (
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleKuokGroupLogoUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={!effectiveIsEditing}
+                />
+              )}
             </div>
             <div>
               <input
@@ -622,6 +725,7 @@ Philippines`}
                 onChange={handleKuokGroupLogoFilenameChange}
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
                 placeholder="kuok-group-logo.webp"
+                readOnly={!effectiveIsEditing}
               />
               <p className="text-xs text-gray-500 mt-1">Enter just the filename</p>
             </div>
@@ -640,18 +744,20 @@ Philippines`}
                     alt="COR Seal Preview" 
                     className="h-32 w-full object-contain rounded"
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setData(prev => ({ ...prev, corSealUrl: "" }));
-                      setCorSealFilename("");
-                    }}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
-                      <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
-                    </svg>
-                  </button>
+                  {effectiveIsEditing && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setData(prev => ({ ...prev, corSealUrl: "" }));
+                        setCorSealFilename("");
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
+                      </svg>
+                    </button>
+                  )}
                 </>
               ) : (
                 <div className="text-center text-gray-500">
@@ -662,12 +768,15 @@ Philippines`}
                   <p className="text-sm">No file selected</p>
                 </div>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleCorSealUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
+              {effectiveIsEditing && (
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCorSealUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={!effectiveIsEditing}
+                />
+              )}
             </div>
             <div>
               <input
@@ -676,146 +785,171 @@ Philippines`}
                 onChange={handleCorSealFilenameChange}
                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
                 placeholder="cor-seal.webp"
+                readOnly={!effectiveIsEditing}
               />
               <p className="text-xs text-gray-500 mt-1">Enter just the filename</p>
             </div>
           </div>
         </div>
 
-        <div>
-          <label className="block font-medium mb-1">Address</label>
-          <textarea
-            name="address"
-            value={data.address}
+        <AnimatedInput
+          id="address"
+          label="Address"
+          value={data.address}
+          onChange={handleChange}
+          placeholder="Company address..."
+          textarea
+          rows={2}
+          readOnly={!effectiveIsEditing}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimatedInput
+            id="copyright"
+            label="Copyright Text"
+            value={data.copyright}
             onChange={handleChange}
-            rows={2}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-            placeholder="Company address..."
+            placeholder="2025 Company Name"
+            readOnly={!effectiveIsEditing}
+          />
+
+          <AnimatedInput
+            id="email"
+            label="Email"
+            value={data.email || ''}
+            onChange={handleChange}
+            type="email"
+            placeholder="contact@example.com"
+            readOnly={!effectiveIsEditing}
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium mb-1">Copyright Text</label>
-            <input
-              type="text"
-              name="copyright"
-              value={data.copyright}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="2025 Company Name"
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimatedInput
+            id="termsUrl"
+            label="Terms URL"
+            value={data.termsUrl}
+            onChange={handleChange}
+            placeholder="/terms"
+            readOnly={!effectiveIsEditing}
+          />
 
-          <div>
-            <label className="block font-medium mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={data.email || ''}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="contact@example.com"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium mb-1">Terms URL</label>
-            <input
-              type="text"
-              name="termsUrl"
-              value={data.termsUrl}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="/terms"
-            />
-          </div>
-
-          <div>
-            <label className="block font-medium mb-1">Privacy URL</label>
-            <input
-              type="text"
-              name="privacyUrl"
-              value={data.privacyUrl}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="/privacy"
-            />
-          </div>
+          <AnimatedInput
+            id="privacyUrl"
+            label="Privacy URL"
+            value={data.privacyUrl}
+            onChange={handleChange}
+            placeholder="/privacy"
+            readOnly={!effectiveIsEditing}
+          />
         </div>
 
         {/* Social Media Links Section */}
         <div>
           <div className="flex justify-between items-center mb-2">
             <label className="block font-medium">Social Media Links</label>
-            <button
-              type="button"
-              className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded"
-              onClick={addSocialLink}
-            >
-              Add Social Link
-            </button>
+            {effectiveIsEditing && (
+              <motion.button
+                type="button"
+                className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-lg"
+                onClick={addSocialLink}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Add Social Link
+              </motion.button>
+            )}
           </div>
 
           {/* Add new social link form */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
-            <input
-              type="text"
-              value={newSocialLink.label}
-              onChange={e => setNewSocialLink({...newSocialLink, label: e.target.value})}
-              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="Label (e.g. Facebook)"
-            />
-            <input
-              type="text"
-              value={newSocialLink.icon}
-              onChange={e => setNewSocialLink({...newSocialLink, icon: e.target.value})}
-              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="Icon (e.g. fa6-brands:facebook)"
-            />
-            <input
-              type="text"
-              value={newSocialLink.url}
-              onChange={e => setNewSocialLink({...newSocialLink, url: e.target.value})}
-              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="URL"
-            />
-          </div>
+          <AnimatePresence>
+            {effectiveIsEditing && (
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AnimatedInput
+                  id="newSocialLinkLabel"
+                  label="Label"
+                  value={newSocialLink.label}
+                  onChange={(e) => setNewSocialLink({...newSocialLink, label: e.target.value})}
+                  placeholder="Label (e.g. Facebook)"
+                  readOnly={!effectiveIsEditing}
+                />
+                <AnimatedInput
+                  id="newSocialLinkIcon"
+                  label="Icon"
+                  value={newSocialLink.icon}
+                  onChange={(e) => setNewSocialLink({...newSocialLink, icon: e.target.value})}
+                  placeholder="Icon (e.g. fa6-brands:facebook)"
+                  readOnly={!effectiveIsEditing}
+                />
+                <AnimatedInput
+                  id="newSocialLinkUrl"
+                  label="URL"
+                  value={newSocialLink.url}
+                  onChange={(e) => setNewSocialLink({...newSocialLink, url: e.target.value})}
+                  placeholder="URL"
+                  readOnly={!effectiveIsEditing}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Existing social links */}
-          <div className="space-y-2">
+          <div className="space-y-4">
             {data.socialLinks && data.socialLinks.map((social, idx) => (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+              <motion.div 
+                key={idx} 
+                className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center p-4 bg-gray-50 rounded-lg"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.1 }}
+              >
                 <div className="flex items-center space-x-2">
                   <Icon icon={social.icon} className="size-6" />
                   <span>{social.label}</span>
                 </div>
-                <input
-                  type="text"
+                <AnimatedInput
+                  id={`social-icon-${idx}`}
+                  label="Icon"
                   value={social.icon}
-                  onChange={e => handleSocialLinkChange(idx, 'icon', e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                  onChange={(e) => handleSocialLinkChange(idx, 'icon', e.target.value)}
                   placeholder="Icon name"
+                  readOnly={!effectiveIsEditing}
                 />
-                <input
-                  type="text"
+                <AnimatedInput
+                  id={`social-url-${idx}`}
+                  label="URL"
                   value={social.url}
-                  onChange={e => handleSocialLinkChange(idx, 'url', e.target.value)}
-                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                  onChange={(e) => handleSocialLinkChange(idx, 'url', e.target.value)}
                   placeholder="URL"
+                  readOnly={!effectiveIsEditing}
                 />
-                <div className="flex space-x-2">
-                  <button
-                    type="button"
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                    onClick={() => removeSocialLink(idx)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
+                <AnimatePresence>
+                  {effectiveIsEditing && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <motion.button
+                        type="button"
+                        className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-medium"
+                        onClick={() => removeSocialLink(idx)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Delete
+                      </motion.button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -824,54 +958,101 @@ Philippines`}
         <div>
           <div className="flex justify-between items-center mb-2">
             <label className="block font-medium">Footer Links</label>
-            <button
-              type="button"
-              className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded"
-              onClick={addLink}
-            >
-              Add Link
-            </button>
+            {effectiveIsEditing && (
+              <motion.button
+                type="button"
+                className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-lg"
+                onClick={addLink}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Add Link
+              </motion.button>
+            )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-4">
             {data.links.map((link, idx) => (
-              <div key={idx} className="flex flex-col md:flex-row gap-2">
-                <input
-                  type="text"
+              <motion.div 
+                key={idx} 
+                className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center p-4 bg-gray-50 rounded-lg"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.1 }}
+              >
+                <AnimatedInput
+                  id={`link-label-${idx}`}
+                  label="Label"
                   value={link.label}
-                  onChange={e => handleLinkChange(idx, "label", e.target.value)}
-                  className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                  onChange={(e) => handleLinkChange(idx, "label", e.target.value)}
                   placeholder="Link Label"
+                  readOnly={!effectiveIsEditing}
                 />
-                <input
-                  type="text"
+                <AnimatedInput
+                  id={`link-url-${idx}`}
+                  label="URL"
                   value={link.url}
-                  onChange={e => handleLinkChange(idx, "url", e.target.value)}
-                  className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                  onChange={(e) => handleLinkChange(idx, "url", e.target.value)}
                   placeholder="Link URL"
+                  readOnly={!effectiveIsEditing}
                 />
-                <button
-                  type="button"
-                  className="text-red-500 px-2"
-                  onClick={() => removeLink(idx)}
-                >
-                  Remove
-                </button>
-              </div>
+                <AnimatePresence>
+                  {effectiveIsEditing && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <motion.button
+                        type="button"
+                        className="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-medium"
+                        onClick={() => removeLink(idx)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Remove
+                      </motion.button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             ))}
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-[#b08b2e] text-white px-4 py-2 rounded font-medium hover:bg-[#a07a1e] transition disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Footer Section"}
-          </button>
-        </div>
-      </div>
+        <AnimatePresence>
+          {effectiveIsEditing && (
+            <motion.div
+              className="flex justify-end mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <motion.button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-[#b08b2e] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#a07a1e] transition disabled:opacity-50 flex items-center gap-2 shadow-lg"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {saving ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  "Save Footer Section"
+                )}
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 };

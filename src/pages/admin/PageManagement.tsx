@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { db } from "../../firebase/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import HeroEditor from "../../components/admin/HeroEditor";
 import ContactEditor from "../../components/admin/ContactEditor";
 import FooterEditor from "../../components/admin/FooterEditor";
+import { useOutletContext } from "react-router-dom";
 
 interface HomepageContent {
   // Hero section
@@ -82,42 +83,87 @@ const PageManagement: React.FC = () => {
   const [content, setContent] = useState<HomepageContent>(initialContent);
   const [activeTab, setActiveTab] = useState<"hero" | "contact" | "footer">("hero");
   const [loading, setLoading] = useState(true);
+  const [editedContent, setEditedContent] = useState<HomepageContent>(initialContent);
 
-  useEffect(() => {
-    const fetchHomepage = async () => {
-      setLoading(true);
-      try {
-        const docRef = doc(db, "homepage", "content");
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          setContent(snap.data() as HomepageContent);
-        }
-      } catch (err: any) {
-        toast.error("Failed to load homepage content");
-        console.error("Error fetching homepage content:", err);
-      } finally {
-        setLoading(false);
+  // Get the editing state from the outlet context
+  const { isPageEditing } = useOutletContext<{ isPageEditing: boolean }>();
+
+  const fetchHomepage = useCallback(async () => {
+    setLoading(true);
+    try {
+      const docRef = doc(db, "homepage", "content");
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data() as HomepageContent;
+        setContent(data);
+        setEditedContent(data);
       }
-    };
-    fetchHomepage();
+    } catch (err: any) {
+      toast.error("Failed to load homepage content");
+      console.error("Error fetching homepage content:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleSave = async (section: keyof HomepageContent, data: HomepageContent[keyof HomepageContent]) => {
+  useEffect(() => {
+    fetchHomepage();
+  }, [fetchHomepage]);
+
+  // Listen for custom events from NavBar
+  useEffect(() => {
+    const handleSave = () => {
+      // Save all sections
+      handleSaveSection("hero", editedContent.hero);
+      handleSaveSection("contact", editedContent.contact);
+      handleSaveSection("footer", editedContent.footer);
+    };
+
+    const handleCancel = () => {
+      // Reset to original content
+      setEditedContent(content);
+    };
+
+    const handleRefresh = () => {
+      // Reload content from database
+      fetchHomepage();
+    };
+
+    window.addEventListener('pageSaveRequested', handleSave);
+    window.addEventListener('pageCancelRequested', handleCancel);
+    window.addEventListener('pageRefreshRequested', handleRefresh);
+
+    return () => {
+      window.removeEventListener('pageSaveRequested', handleSave);
+      window.removeEventListener('pageCancelRequested', handleCancel);
+      window.removeEventListener('pageRefreshRequested', handleRefresh);
+    };
+  }, [content, editedContent, fetchHomepage]);
+
+  const handleSaveSection = async (section: keyof HomepageContent, data: HomepageContent[keyof HomepageContent]) => {
     try {
       const updatedHomepage = {
-        ...content,
+        ...editedContent,
         [section]: data,
       };
       
       const docRef = doc(db, "homepage", "content");
       await setDoc(docRef, updatedHomepage, { merge: true });
       
+      setEditedContent(updatedHomepage);
       setContent(updatedHomepage);
       toast.success(`${section.charAt(0).toUpperCase() + section.slice(1)} section saved successfully!`);
     } catch (err: any) {
       toast.error(`Failed to save ${section} section`);
       console.error(`Error saving ${section} section:`, err);
     }
+  };
+
+  const handleEditorChange = (section: keyof HomepageContent, data: HomepageContent[keyof HomepageContent]) => {
+    setEditedContent(prev => ({
+      ...prev,
+      [section]: data
+    }));
   };
 
   if (loading) {
@@ -130,8 +176,6 @@ const PageManagement: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 h-full overflow-y-auto">
-     
-
       <div className="mb-6">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8">
@@ -173,8 +217,11 @@ const PageManagement: React.FC = () => {
         <div className="space-y-6">
           <div className="pb-20">
             <HeroEditor
-              initialData={content.hero}
-              onSave={(data) => handleSave("hero", data)}
+              initialData={editedContent.hero}
+              onSave={(data) => {
+                handleEditorChange("hero", data);
+                return Promise.resolve();
+              }}
             />
           </div>
         </div>
@@ -184,8 +231,11 @@ const PageManagement: React.FC = () => {
         <div className="space-y-6">
           <div className="pb-20">
             <ContactEditor
-              initialData={content.contact}
-              onSave={(data) => handleSave("contact", data)}
+              initialData={editedContent.contact}
+              onSave={(data) => {
+                handleEditorChange("contact", data);
+                return Promise.resolve();
+              }}
             />
           </div>
         </div>
@@ -195,13 +245,15 @@ const PageManagement: React.FC = () => {
         <div className="space-y-6">
           <div className="pb-20">
             <FooterEditor
-              initialData={content.footer}
-              onSave={(data) => handleSave("footer", data)}
+              initialData={editedContent.footer}
+              onSave={(data) => {
+                handleEditorChange("footer", data);
+                return Promise.resolve();
+              }}
             />
           </div>
         </div>
       )}
-
     </div>
   );
 };

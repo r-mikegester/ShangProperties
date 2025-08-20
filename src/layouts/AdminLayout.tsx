@@ -36,6 +36,7 @@ export const AdminLayout: React.FC = () => {
   const [isInquiriesArchive, setIsInquiriesArchive] = useState(false);
   const [isInquiriesEditMode, setIsInquiriesEditMode] = useState(false);
   const [selectedInquiriesCount, setSelectedInquiriesCount] = useState(0);
+  const [isPageEditing, setIsPageEditing] = useState(false);
   const isMobile = useIsMobile();
 
   // Close dropdowns on outside click
@@ -132,6 +133,31 @@ export const AdminLayout: React.FC = () => {
     window.dispatchEvent(new CustomEvent('inquiriesMassDelete'));
   };
 
+  // Handle page edit mode toggle
+  const handlePageEditToggle = () => {
+    setIsPageEditing(!isPageEditing);
+  };
+
+  // Handle page save
+  const handlePageSave = () => {
+    // Dispatch a custom event that the PageManagement component can listen to
+    window.dispatchEvent(new CustomEvent('pageSaveRequested'));
+    setIsPageEditing(false);
+  };
+
+  // Handle page cancel
+  const handlePageCancel = () => {
+    // Dispatch a custom event that the PageManagement component can listen to
+    window.dispatchEvent(new CustomEvent('pageCancelRequested'));
+    setIsPageEditing(false);
+  };
+
+  // Handle page refresh
+  const handlePageRefresh = () => {
+    // Dispatch a custom event that the PageManagement component can listen to
+    window.dispatchEvent(new CustomEvent('pageRefreshRequested'));
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {!isMobile && <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />}
@@ -157,6 +183,12 @@ export const AdminLayout: React.FC = () => {
           isInquiriesArchiveViewState={isInquiriesArchive}
           onInquiriesEditModeToggle={() => setIsInquiriesEditMode(!isInquiriesEditMode)}
           isInquiriesEditModeActive={isInquiriesEditMode}
+          // Page management props
+          isPageEditing={isPageEditing}
+          onPageEditToggle={handlePageEditToggle}
+          onPageSave={handlePageSave}
+          onPageCancel={handlePageCancel}
+          onPageRefresh={handlePageRefresh}
         />
         <main className="flex-1 overflow-y-auto">
           <Outlet context={{
@@ -167,7 +199,9 @@ export const AdminLayout: React.FC = () => {
             isInquiriesEditMode,
             setIsInquiriesEditMode,
             selectedInquiriesCount,
-            setSelectedInquiriesCount
+            setSelectedInquiriesCount,
+            isPageEditing,
+            setIsPageEditing
           }} />
         </main>
       </div>

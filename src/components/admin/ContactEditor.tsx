@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useOutletContext } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ContactContent {
   address: string;
@@ -15,11 +17,17 @@ interface ContactContent {
 interface SectionEditorProps<T> {
   initialData: T;
   onSave: (data: T) => Promise<void>;
+  isEditing?: boolean;
 }
 
-const ContactEditor: React.FC<SectionEditorProps<ContactContent>> = ({ initialData, onSave }) => {
+const ContactEditor: React.FC<SectionEditorProps<ContactContent>> = ({ initialData, onSave, isEditing }) => {
   const [data, setData] = useState(initialData);
   const [saving, setSaving] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  
+  // Get the editing state from the outlet context
+  const { isPageEditing } = useOutletContext<{ isPageEditing: boolean }>();
+  const effectiveIsEditing = isEditing !== undefined ? isEditing : isPageEditing;
 
   useEffect(() => {
     setData(initialData);
@@ -40,6 +48,85 @@ const ContactEditor: React.FC<SectionEditorProps<ContactContent>> = ({ initialDa
     } finally {
       setSaving(false);
     }
+  };
+
+  // Custom input component with animations
+  const AnimatedInput = ({ 
+    id, 
+    label, 
+    value, 
+    onChange, 
+    placeholder, 
+    type = "text",
+    readOnly = false,
+    textarea = false,
+    rows
+  }: {
+    id: string;
+    label: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+    placeholder?: string;
+    type?: string;
+    readOnly?: boolean;
+    textarea?: boolean;
+    rows?: number;
+  }) => {
+    const InputComponent = textarea ? "textarea" : "input";
+    
+    return (
+      <div className="mb-6 relative">
+        <motion.label
+          htmlFor={id}
+          className="block text-sm font-medium text-gray-700 mb-1"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {label}
+        </motion.label>
+        
+        <div className="relative">
+          <motion.div
+            className="absolute inset-0 bg-[#b08b2e] rounded-lg shadow-lg"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          />
+          
+          <InputComponent
+            id={id}
+            name={id}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            type={type}
+            readOnly={readOnly}
+            rows={rows}
+            className={`relative block w-full px-4 py-3 rounded-lg border-0 bg-white focus:outline-none focus:ring-2 focus:ring-[#b08b2e] placeholder-gray-400 transition-all duration-300 ${
+              textarea ? 'min-h-[100px]' : ''
+            }`}
+            onFocus={() => setFocusedField(id)}
+            onBlur={() => setFocusedField(null)}
+          />
+          
+          {focusedField === id && (
+            <motion.div
+              className="absolute -inset-0.5 rounded-lg bg-[#b08b2e] opacity-20"
+              initial={{ scale: 1 }}
+              animate={{ 
+                scale: [1, 1.02, 1],
+              }}
+              transition={{ 
+                duration: 1.5,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+            />
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -89,117 +176,123 @@ const ContactEditor: React.FC<SectionEditorProps<ContactContent>> = ({ initialDa
       </div>
 
       {/* Edit Form */}
-      <div className="space-y-4">
-        <div>
-          <label className="block font-medium mb-1">Address</label>
-          <textarea
-            name="address"
-            value={data.address}
+      <motion.div
+        className="bg-white rounded-xl shadow-lg p-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <AnimatedInput
+          id="address"
+          label="Address"
+          value={data.address}
+          onChange={handleChange}
+          placeholder="Company address..."
+          textarea
+          rows={3}
+          readOnly={!effectiveIsEditing}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimatedInput
+            id="phone"
+            label="Phone"
+            value={data.phone}
             onChange={handleChange}
-            rows={3}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-            placeholder="Company address..."
+            placeholder="+1234567890"
+            readOnly={!effectiveIsEditing}
+          />
+          
+          <AnimatedInput
+            id="email"
+            label="Email"
+            value={data.email}
+            onChange={handleChange}
+            type="email"
+            placeholder="contact@example.com"
+            readOnly={!effectiveIsEditing}
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium mb-1">Phone</label>
-            <input
-              type="text"
-              name="phone"
-              value={data.phone}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="+1234567890"
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimatedInput
+            id="facebook"
+            label="Facebook URL"
+            value={data.facebook}
+            onChange={handleChange}
+            placeholder="https://facebook.com/..."
+            readOnly={!effectiveIsEditing}
+          />
           
-          <div>
-            <label className="block font-medium mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={data.email}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="contact@example.com"
-            />
-          </div>
+          <AnimatedInput
+            id="instagram"
+            label="Instagram URL"
+            value={data.instagram}
+            onChange={handleChange}
+            placeholder="https://instagram.com/..."
+            readOnly={!effectiveIsEditing}
+          />
+          
+          <AnimatedInput
+            id="viber"
+            label="Viber Link"
+            value={data.viber}
+            onChange={handleChange}
+            placeholder="Viber link or number"
+            readOnly={!effectiveIsEditing}
+          />
+          
+          <AnimatedInput
+            id="whatsapp"
+            label="WhatsApp Link"
+            value={data.whatsapp}
+            onChange={handleChange}
+            placeholder="WhatsApp link or number"
+            readOnly={!effectiveIsEditing}
+          />
+          
+          <AnimatedInput
+            id="telegram"
+            label="Telegram Link"
+            value={data.telegram}
+            onChange={handleChange}
+            placeholder="Telegram link or number"
+            readOnly={!effectiveIsEditing}
+          />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium mb-1">Facebook URL</label>
-            <input
-              type="text"
-              name="facebook"
-              value={data.facebook}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="https://facebook.com/..."
-            />
-          </div>
-          
-          <div>
-            <label className="block font-medium mb-1">Instagram URL</label>
-            <input
-              type="text"
-              name="instagram"
-              value={data.instagram}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="https://instagram.com/..."
-            />
-          </div>
-          
-          <div>
-            <label className="block font-medium mb-1">Viber Link</label>
-            <input
-              type="text"
-              name="viber"
-              value={data.viber}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="Viber link or number"
-            />
-          </div>
-          
-          <div>
-            <label className="block font-medium mb-1">WhatsApp Link</label>
-            <input
-              type="text"
-              name="whatsapp"
-              value={data.whatsapp}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="WhatsApp link or number"
-            />
-          </div>
-          
-          <div>
-            <label className="block font-medium mb-1">Telegram Link</label>
-            <input
-              type="text"
-              name="telegram"
-              value={data.telegram}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
-              placeholder="Telegram link or number"
-            />
-          </div>
-        </div>
-        
-        <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-[#b08b2e] text-white px-4 py-2 rounded font-medium hover:bg-[#a07a1e] transition disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Contact Section"}
-          </button>
-        </div>
-      </div>
+        <AnimatePresence>
+          {effectiveIsEditing && (
+            <motion.div
+              className="flex justify-end mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <motion.button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-[#b08b2e] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#a07a1e] transition disabled:opacity-50 flex items-center gap-2 shadow-lg"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {saving ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  "Save Contact Section"
+                )}
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 };

@@ -15,6 +15,9 @@ const Hero: React.FC<HeroProps> = ({ imageRef }) => {
   });
   
   const [loading, setLoading] = useState(true);
+  
+  // Default base URL for background images
+  const DEFAULT_BASE_URL = "https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/";
 
   useEffect(() => {
     // Listen for real-time updates from Firestore
@@ -42,6 +45,23 @@ const Hero: React.FC<HeroProps> = ({ imageRef }) => {
     // Clean up the listener on unmount
     return () => unsubscribe();
   }, []);
+  
+  // Construct full URL for the background image
+  const getBackgroundImageUrl = () => {
+    const { backgroundUrl } = heroContent;
+    
+    // If no background URL, return default
+    if (!backgroundUrl) return DEFAULT_BASE_URL;
+    
+    // If it's already a full URL, return as is
+    try {
+      new URL(backgroundUrl);
+      return backgroundUrl;
+    } catch {
+      // If it's not a valid URL, treat as filename and prepend base URL
+      return `${DEFAULT_BASE_URL}${backgroundUrl}`;
+    }
+  };
 
   // Process paragraph text for expand/collapse functionality
   const fullText = heroContent.paragraph || "Shang Properties, Inc. (SPI) has been involved in property investment and development in the Philippines since 1987 and was listed on the Philippine Stock Exchange (PSE) in 1991. Shang Properties' core businesses are office and retail leasing and residential development, as guided by its vision to be the leading developer and manager of prime properties in the Philippines.";
@@ -55,7 +75,7 @@ const Hero: React.FC<HeroProps> = ({ imageRef }) => {
     >
       <motion.img
         ref={imageRef}
-        src={heroContent.backgroundUrl || "https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/"}
+        src={getBackgroundImageUrl()}
         alt="Hero"
         className="absolute inset-0 w-full h-full object-cover z-0 will-change-transform"
         initial={{ scale: 1.08, opacity: 0 }}

@@ -40,7 +40,7 @@ interface NavBarProps {
   onPageEdit?: () => void;
   onPlaceholder?: () => void;
   
-  // New props for inquiries edit mode
+  // New props
   isInquiriesEditMode?: boolean;
   isInquiriesArchiveView?: boolean;
   selectedInquiriesCount?: number;
@@ -53,6 +53,13 @@ interface NavBarProps {
   isInquiriesArchiveViewState?: boolean;
   onInquiriesEditModeToggle?: () => void;
   isInquiriesEditModeActive?: boolean;
+  
+  // Page management editing mode
+  isPageEditing?: boolean;
+  onPageEditToggle?: () => void;
+  onPageSave?: () => void;
+  onPageCancel?: () => void;
+  onPageRefresh?: () => void;
 }
 
 const NavBar: React.FC<NavBarProps> = ({
@@ -80,6 +87,13 @@ const NavBar: React.FC<NavBarProps> = ({
   isInquiriesArchiveViewState,
   onInquiriesEditModeToggle,
   isInquiriesEditModeActive,
+  
+  // Page management editing mode
+  isPageEditing,
+  onPageEditToggle,
+  onPageSave,
+  onPageCancel,
+  onPageRefresh,
 }) => {
   const location = useLocation();
   const context = location.pathname.startsWith("/dashboard/projects") || location.pathname.startsWith("/admin/projects")
@@ -316,23 +330,46 @@ const NavBar: React.FC<NavBarProps> = ({
           </div>
         )}
 
-        {context === "page-management" && (
+        {context === "page-management" && !isPageEditing && (
           <div className="flex items-center gap-2">
             <button
               type="button"
               aria-label="Edit content"
               className="p-2 rounded-lg bg-[#b08b2e] text-white hover:bg-[#a07a1e] transition shadow"
-              onClick={onPageEdit}
+              onClick={onPageEditToggle || onPageEdit}
             >
               <Icon icon="solar:pen-2-broken" width={22} height={22} />
             </button>
             <button
               type="button"
-              aria-label="Placeholder action"
+              aria-label="Refresh page"
               className="p-2 rounded-lg bg-gray-200 text-[#b08b2e] hover:bg-[#b08b2e]/10 transition shadow"
-              onClick={onPlaceholder}
+              onClick={onPageRefresh}
             >
-              <Icon icon="solar:stars-minimalistic-broken" width={22} height={22} />
+              <Icon icon="mdi:refresh" width={22} height={22} />
+            </button>
+          </div>
+        )}
+
+        {context === "page-management" && isPageEditing && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Cancel edit"
+              className="p-2 rounded-lg flex items-center bg-gray-200 text-[#b08b2e] hover:bg-[#b08b2e]/10 transition shadow"
+              onClick={onPageCancel}
+            >
+              <Icon icon="solar:close-circle-broken" width={22} height={22} />
+              <span className="ml-1">Cancel</span>
+            </button>
+            <button
+              type="button"
+              aria-label="Save changes"
+              className="p-2 rounded-lg flex items-center bg-[#b08b2e] text-white hover:bg-[#a07a1e] transition shadow"
+              onClick={onPageSave}
+            >
+              <Icon icon="solar:save-bold" width={22} height={22} />
+              <span className="ml-1">Save</span>
             </button>
           </div>
         )}

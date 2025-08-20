@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { put } from '@vercel/blob';
+import { useOutletContext } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface HeroContent {
   backgroundUrl: string;
@@ -11,13 +13,19 @@ interface HeroContent {
 interface SectionEditorProps<T> {
   initialData: T;
   onSave: (data: T) => Promise<void>;
+  isEditing?: boolean;
 }
 
-const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, onSave }) => {
+const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, onSave, isEditing }) => {
   const [data, setData] = useState(initialData);
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [filename, setFilename] = useState<string>("");
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  // Get the editing state from the outlet context
+  const { isPageEditing } = useOutletContext<{ isPageEditing: boolean }>();
+  const effectiveIsEditing = isEditing !== undefined ? isEditing : isPageEditing;
 
   // Default base URL for background images
   const DEFAULT_BASE_URL = "https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/";
@@ -40,6 +48,9 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
         // If it's not a valid URL, treat it as a filename
         setFilename(initialData.backgroundUrl);
       }
+    } else if (initialData.backgroundUrl && initialData.backgroundUrl !== DEFAULT_BASE_URL) {
+      // If it's just a filename, use it directly
+      setFilename(initialData.backgroundUrl);
     }
   }, [initialData]);
 
@@ -52,7 +63,10 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
   const handleFilenameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFilename(value);
-    setData(prev => ({ ...prev, backgroundUrl: value }));
+    
+    // When filename changes, construct the full URL
+    const fullUrl = value ? `${DEFAULT_BASE_URL}${value}` : DEFAULT_BASE_URL;
+    setData(prev => ({ ...prev, backgroundUrl: fullUrl }));
   };
 
   // Upload image to Vercel Blob and return URL
@@ -117,7 +131,9 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
         if (pathParts.length > 0) {
           const fileName = pathParts[pathParts.length - 1];
           setFilename(fileName);
-          setData(prev => ({ ...prev, backgroundUrl: fileName }));
+          
+          // Set the full URL in the data
+          setData(prev => ({ ...prev, backgroundUrl: url }));
         }
       } catch (e) {
         // Handle error if URL parsing fails
@@ -139,6 +155,7 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
   // Construct full URL for preview
   const getFullImageUrl = () => {
     if (!data.backgroundUrl) return DEFAULT_BASE_URL;
+    
     // If it's already a full URL, return as is
     try {
       new URL(data.backgroundUrl);
@@ -159,6 +176,161 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
     } finally {
       setSaving(false);
     }
+  };
+
+  // Custom input component with animations
+  const AnimatedInput = ({ 
+    id, 
+    label, 
+    value, 
+    onChange, 
+    placeholder, 
+    type = "text",
+    readOnly = false,
+    textarea = false,
+    rows
+  }: {
+    id: string;
+    label: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+    placeholder?: string;
+    type?: string;
+    readOnly?: boolean;
+    textarea?: boolean;
+    rows?: number;
+  }) => {
+    const InputComponent = textarea ? "textarea" : "input";
+    
+    return (
+      <div className="mb-6 relative">
+        <motion.label
+          htmlFor={id}
+          className="block text-sm font-medium text-gray-700 mb-1"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {label}
+        </motion.label>
+        
+        <div className="relative">
+          <motion.div
+            className="absolute inset-0 bg-[#b08b2e] rounded-lg shadow-lg"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          />
+          
+          <InputComponent
+            id={id}
+            name={id}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            type={type}
+            readOnly={readOnly}
+            rows={rows}
+            className={`relative block w-full px-4 py-3 rounded-lg border-0 bg-white focus:outline-none focus:ring-2 focus:ring-[#b08b2e] placeholder-gray-400 transition-all duration-300 ${
+              textarea ? 'min-h-[100px]' : ''
+            }`}
+            onFocus={() => setFocusedField(id)}
+            onBlur={() => setFocusedField(null)}
+          />
+          
+          {focusedField === id && (
+            <motion.div
+              className="absolute -inset-0.5 rounded-lg bg-[#b08b2e] opacity-20"
+              initial={{ scale: 1 }}
+              animate={{ 
+                scale: [1, 1.02, 1],
+              }}
+              transition={{ 
+                duration: 1.5,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Custom file upload component with animations
+  const AnimatedFileUpload = () => {
+    return (
+      <div className="mb-6">
+        <motion.label
+          className="block text-sm font-medium text-gray-700 mb-1"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          Background Image
+        </motion.label>
+        
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <motion.div 
+            className="relative flex-1"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#b08b2e] file:text-white hover:file:bg-[#a07a1e] file:transition file:duration-300 file:cursor-pointer"
+              disabled={!effectiveIsEditing}
+            />
+          </motion.div>
+          
+          {uploadProgress !== null && (
+            <motion.div 
+              className="text-sm text-gray-500"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              {uploadProgress}%
+            </motion.div>
+          )}
+        </div>
+        
+        <AnimatePresence>
+          {data.backgroundUrl && (
+            <motion.div 
+              className="mt-4 relative"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex items-center gap-4">
+                <img 
+                  src={getFullImageUrl()} 
+                  alt="Preview" 
+                  className="h-24 w-32 object-cover rounded-lg border-2 border-[#b08b2e]"
+                />
+                {effectiveIsEditing && (
+                  <motion.button
+                    type="button"
+                    onClick={() => {
+                      setData(prev => ({ ...prev, backgroundUrl: DEFAULT_BASE_URL }));
+                      setFilename("");
+                    }}
+                    className="text-sm text-red-500 hover:text-red-700 font-medium"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Remove Image
+                  </motion.button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
   };
 
   return (
@@ -212,88 +384,80 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
       </div>
 
       {/* Edit Form - on bottom for mobile, on left for desktop */}
-      <div className="space-y-4 w-full lg:w-1/2 lg:order-1">
-        <div>
-          <label className="block font-medium mb-1">Background Image</label>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#b08b2e] file:text-white hover:file:bg-[#a07a1e]"
-            />
-            {uploadProgress !== null && (
-              <div className="text-sm text-gray-500">{uploadProgress}%</div>
-            )}
-          </div>
-          {data.backgroundUrl && (
-            <div className="mt-2">
-              <img 
-                src={getFullImageUrl()} 
-                alt="Preview" 
-                className="h-24 w-32 object-cover rounded border"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setData(prev => ({ ...prev, backgroundUrl: "" }));
-                  setFilename("");
-                }}
-                className="mt-1 text-sm text-red-500 hover:text-red-700"
-              >
-                Remove Image
-              </button>
-            </div>
-          )}
-        </div>
-        
-        <div>
-          <label className="block font-medium mb-1">Background Image Filename</label>
-          <input
-            type="text"
+      <div className="w-full lg:w-1/2 lg:order-1">
+        <motion.div
+          className="bg-white rounded-xl shadow-lg p-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <AnimatedFileUpload />
+          
+          <AnimatedInput
+            id="filename"
+            label="Background Image Filename"
             value={filename}
-            onChange={handleFilenameChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+            onChange={(e) => handleFilenameChange(e as React.ChangeEvent<HTMLInputElement>)}
             placeholder="image.jpg"
+            readOnly={!effectiveIsEditing}
           />
-          <p className="text-xs text-gray-500 mt-1">Enter just the filename. It will be automatically prefixed with the default base URL.</p>
-          <p className="text-xs text-gray-500 mt-1">Current full URL: {getFullImageUrl()}</p>
-        </div>
-        
-        <div>
-          <label className="block font-medium mb-1">Headline (H1) - Supports HTML</label>
-          <textarea
-            name="headline"
+          <p className="text-xs text-gray-500 mt-1 mb-6">Enter just the filename. It will be automatically prefixed with the default base URL.</p>
+          
+          <AnimatedInput
+            id="headline"
+            label="Headline (H1) - Supports HTML"
             value={data.headline}
             onChange={handleChange}
-            rows={3}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
             placeholder="Hero Headline"
+            textarea
+            rows={3}
+            readOnly={!effectiveIsEditing}
           />
-          <p className="text-xs text-gray-500 mt-1">Supports HTML tags like &lt;br&gt; for line breaks</p>
-        </div>
-        
-        <div>
-          <label className="block font-medium mb-1">Paragraph</label>
-          <textarea
-            name="paragraph"
+          <p className="text-xs text-gray-500 mt-1 mb-6">Supports HTML tags like &lt;br&gt; for line breaks</p>
+          
+          <AnimatedInput
+            id="paragraph"
+            label="Paragraph"
             value={data.paragraph}
             onChange={handleChange}
-            rows={3}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
             placeholder="Hero paragraph text..."
+            textarea
+            rows={4}
+            readOnly={!effectiveIsEditing}
           />
-        </div>
-        
-        <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-[#b08b2e] text-white px-4 py-2 rounded font-medium hover:bg-[#a07a1e] transition disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Hero Section"}
-          </button>
-        </div>
+          
+          <AnimatePresence>
+            {effectiveIsEditing && (
+              <motion.div
+                className="flex justify-end mt-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <motion.button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="bg-[#b08b2e] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#a07a1e] transition disabled:opacity-50 flex items-center gap-2 shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {saving ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Hero Section"
+                  )}
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </div>
   );
