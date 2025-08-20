@@ -1,33 +1,27 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { db } from "../../firebase/firebase";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  addDoc,
+  deleteDoc,
+  setDoc,
+} from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { DragCloseDrawer } from "../../components/DragCloseDrawer";
 import { Modal } from "../../components/Modal";
 import { Icon } from "@iconify/react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { SmoothHoverMenuItem } from "../../components/admin/SmoothHoverMenuItem";
 import { useAdminToolbar } from "../../context/AdminToolbarContext";
 import { useProjects } from "../../hooks/useProjects";
-import ProjectDetailContainer from "../../components/admin/ProjectDetailContainer";
+import { Project } from "../../types/Project";
+import { put } from '@vercel/blob';
 
-interface Project {
-  id: string;
-  title: string;
-  formalName?: string;
-  description?: string;
-  description2?: string;
-  image?: string;
-  iframeSrc?: string;
-  address?: string;
-  developer?: string;
-  sm?: string;
-  gallery?: string[];
-  project_type?: string;
-  productmix?: string;
-  noofunits?: string;
-  design_team?: string;
-  tours360?: string[];
-}
-
+// Define the empty project structure
 const emptyProject: Omit<Project, "id"> = {
   title: "",
   formalName: "",
@@ -46,63 +40,471 @@ const emptyProject: Omit<Project, "id"> = {
   tours360: [],
 };
 
+// Define types for our component
+type ProjectDetailMode = "add" | "edit" | "preview";
+
+type ProjectDetailContainerProps = {
+  mode: ProjectDetailMode;
+  project: Partial<Project> | Omit<Project, "id">;
+  onChange?: (field: keyof Project, value: any) => void;
+  onSave?: () => void;
+  onAdd?: () => void;
+  onImageUpload?: (file: File) => void;
+  onGalleryUpload?: (file: File) => void;
+  onRemove?: () => void;
+  onClose?: () => void;
+  loading?: boolean;
+  uploadProgress?: number | null;
+  addUploadProgress?: number | null;
+  showRemoveModal?: boolean;
+  setShowRemoveModal?: (v: boolean) => void;
+  removing?: boolean;
+  isArchived?: boolean;
+};
+
+// Project detail component
+const ProjectDetailContainer: React.FC<ProjectDetailContainerProps> = ({
+  mode,
+  project,
+  onChange,
+  onSave,
+  onAdd,
+  onImageUpload,
+  onGalleryUpload,
+  onRemove,
+  onClose,
+  loading,
+  uploadProgress,
+  addUploadProgress,
+  showRemoveModal,
+  setShowRemoveModal,
+  removing,
+  isArchived = false,
+}) => {
+  const isEdit = mode === "edit";
+  const isAdd = mode === "add";
+  const isPreview = mode === "preview";
+  const [activeTab, setActiveTab] = useState<'project-details' | 'descriptions' | 'iframe360' | 'image-showcase'>('project-details');
+
+  return (
+    <div className="flex flex-col h-full max-h-[90vh] md:max-h-[85vh] bg-white rounded-t-2xl md:rounded-2xl shadow-xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white sticky top-0 z-10">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={onClose}
+            className="md:hidden p-2 rounded-full hover:bg-slate-100"
+          >
+            <Icon icon="solar:close-circle-broken" width="24" height="24" className="text-slate-500" />
+          </button>
+          <h2 className="text-xl font-bold text-[#b08b2e]">
+            {isEdit ? "Edit Project" : isAdd ? "Add Project" : project.title}
+          </h2>
+        </div>
+        <div className="flex items-center space-x-2">
+          {isEdit && !isArchived && (
+            <button
+              onClick={() => setShowRemoveModal && setShowRemoveModal(true)}
+              className="p-2 rounded-full hover:bg-red-50 text-red-500"
+            >
+              <Icon icon="solar:trash-bin-trash-broken" width="24" height="24" />
+            </button>
+          )}
+          {(isEdit || isAdd) && !isArchived && (
+            <button
+              onClick={isEdit ? onSave : onAdd}
+              disabled={loading}
+              className="px-4 py-2 bg-[#b08b2e] text-white rounded-lg hover:bg-[#b08b2e]/90 disabled:opacity-50 flex items-center"
+            >
+              {loading ? (
+                <>
+                  <Icon icon="svg-spinners:bars-scale-fade" width="20" height="20" />
+                  <span className="ml-2">Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Icon icon="solar:save-bold" width="20" height="20" />
+                  <span className="ml-2">Save</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200 overflow-x-auto">
+        <button
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${activeTab === 'project-details' ? 'border-b-2 border-[#b08b2e] text-[#b08b2e]' : 'text-slate-500'}`}
+          onClick={() => setActiveTab('project-details')}
+        >
+          Project Details
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${activeTab === 'descriptions' ? 'border-b-2 border-[#b08b2e] text-[#b08b2e]' : 'text-slate-500'}`}
+          onClick={() => setActiveTab('descriptions')}
+        >
+          Descriptions
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${activeTab === 'iframe360' ? 'border-b-2 border-[#b08b2e] text-[#b08b2e]' : 'text-slate-500'}`}
+          onClick={() => setActiveTab('iframe360')}
+        >
+          iFrame & 360
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${activeTab === 'image-showcase' ? 'border-b-2 border-[#b08b2e] text-[#b08b2e]' : 'text-slate-500'}`}
+          onClick={() => setActiveTab('image-showcase')}
+        >
+          Image Showcase
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {/* Project Details Tab */}
+        {activeTab === 'project-details' && (
+          <div className="mb-8">
+            <div className="bg-[#b08b2e]/30 shadow-md border border-[#b08b2e]/50 flex items-start justify-between p-3 rounded-xl space-x-3 h-full w-full">
+              <div>
+                <div className="flex items-start justify-between space-x-3 w-full">
+                  <div className="flex items-start space-x-3 w-full">
+                    <div className="flex flex-col relative">
+                      <img
+                        src={project.image || `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80"><rect width="120" height="80" fill="%23f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="12" fill="%23999">No Image</text></svg>`}
+                        alt={project.title || "Project image"}
+                        className="md:min-w-32 max-w-full md:min-h-44 h-44 w-32 max-h-full object-cover rounded-lg border"
+                      />
+                      <label className="flex items-center justify-center absolute bottom-0 cursor-pointer border w-full rounded-b-lg border-[#b08b2e] py-2 hover:bg-[#b08b2e] bg-[#b08b2e]/50 text-white gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0] && onImageUpload) {
+                              onImageUpload(e.target.files[0]);
+                            }
+                          }}
+                        />
+                        <span className="font-bold text-xl">
+                          <Icon icon="solar:gallery-edit-broken" width="24" height="24" />
+                        </span>
+                        {uploadProgress !== null && (
+                          <div className="text-xs text-white mt-1">
+                            <span className="hidden md:block">Uploading:</span> {uploadProgress?.toFixed(0)}%
+                          </div>
+                        )}
+                        {addUploadProgress !== null && (
+                          <div className="text-xs text-white mt-1">
+                            <span className="hidden md:block">Uploading:</span> {addUploadProgress?.toFixed(0)}%
+                          </div>
+                        )}
+                      </label>
+                    </div>
+                    <div className="flex flex-col w-56">
+                      {(isEdit || isAdd) ? (
+                        <>
+                          <input
+                            className="text-3xl font-bold text-[#b08b2e] mb-1 bg-transparent border-none focus:ring-0 p-0 outline-none"
+                            style={{ outline: "none" }}
+                            value={project.title || ""}
+                            onChange={e => onChange && onChange("title", e.target.value)}
+                            placeholder="Project Title"
+                            maxLength={100}
+                          />
+                          <input
+                            className="text-slate-500 text-sm bg-transparent border-none focus:ring-0 p-0 outline-none"
+                            style={{ outline: "none" }}
+                            value={project.formalName || ""}
+                            onChange={e => onChange && onChange("formalName", e.target.value)}
+                            placeholder="Formal Name"
+                            maxLength={100}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <h1 className="text-3xl font-bold text-[#b08b2e] mb-1">{project.title}</h1>
+                          <div className="text-slate-500 text-sm">{project.formalName}</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                {(isEdit || isAdd) ? (
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                    value={project.address || ""}
+                    onChange={e => onChange && onChange("address", e.target.value)}
+                    placeholder="Project Address"
+                  />
+                ) : (
+                  <div className="text-slate-900">{project.address}</div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Developer</label>
+                {(isEdit || isAdd) ? (
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                    value={project.developer || ""}
+                    onChange={e => onChange && onChange("developer", e.target.value)}
+                    placeholder="Project Developer"
+                  />
+                ) : (
+                  <div className="text-slate-900">{project.developer}</div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Social Media</label>
+                {(isEdit || isAdd) ? (
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                    value={project.sm || ""}
+                    onChange={e => onChange && onChange("sm", e.target.value)}
+                    placeholder="Social Media Link"
+                  />
+                ) : (
+                  <div className="text-slate-900">{project.sm}</div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Project Type</label>
+                {(isEdit || isAdd) ? (
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                    value={project.project_type || ""}
+                    onChange={e => onChange && onChange("project_type", e.target.value)}
+                    placeholder="Project Type"
+                  />
+                ) : (
+                  <div className="text-slate-900">{project.project_type}</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Descriptions Tab */}
+        {activeTab === 'descriptions' && (
+          <div className="mb-8">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                {(isEdit || isAdd) ? (
+                  <textarea
+                    rows={4}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                    value={project.description || ""}
+                    onChange={e => onChange && onChange("description", e.target.value)}
+                    placeholder="Project Description"
+                  />
+                ) : (
+                  <div className="text-slate-900 whitespace-pre-line">{project.description}</div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Additional Description</label>
+                {(isEdit || isAdd) ? (
+                  <textarea
+                    rows={4}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                    value={project.description2 || ""}
+                    onChange={e => onChange && onChange("description2", e.target.value)}
+                    placeholder="Additional Project Description"
+                  />
+                ) : (
+                  <div className="text-slate-900 whitespace-pre-line">{project.description2}</div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Product Mix</label>
+                  {(isEdit || isAdd) ? (
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                      value={project.productmix || ""}
+                      onChange={e => onChange && onChange("productmix", e.target.value)}
+                      placeholder="Product Mix"
+                    />
+                  ) : (
+                    <div className="text-slate-900">{project.productmix}</div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Number of Units</label>
+                  {(isEdit || isAdd) ? (
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                      value={project.noofunits || ""}
+                      onChange={e => onChange && onChange("noofunits", e.target.value)}
+                      placeholder="Number of Units"
+                    />
+                  ) : (
+                    <div className="text-slate-900">{project.noofunits}</div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Design Team</label>
+                  {(isEdit || isAdd) ? (
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                      value={project.design_team || ""}
+                      onChange={e => onChange && onChange("design_team", e.target.value)}
+                      placeholder="Design Team"
+                    />
+                  ) : (
+                    <div className="text-slate-900">{project.design_team}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* iFrame & 360 Tab */}
+        {activeTab === 'iframe360' && (
+          <div className="mb-8">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">iFrame Source</label>
+                {(isEdit || isAdd) ? (
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                    value={project.iframeSrc || ""}
+                    onChange={e => onChange && onChange("iframeSrc", e.target.value)}
+                    placeholder="iFrame Source URL"
+                  />
+                ) : (
+                  <div className="text-slate-900">{project.iframeSrc}</div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">360 Tours</label>
+                {(isEdit || isAdd) ? (
+                  <textarea
+                    rows={3}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b08b2e]"
+                    value={(project.tours360 || []).join('\n')}
+                    onChange={e => onChange && onChange("tours360", e.target.value.split('\n').filter(url => url.trim() !== ''))}
+                    placeholder="Enter 360 Tour URLs (one per line)"
+                  />
+                ) : (
+                  <div className="flex flex-col space-y-2">
+                    {(project.tours360 || []).map((tour, idx) => (
+                      <div key={idx} className="text-slate-900">{tour}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Image Showcase Tab */}
+        {activeTab === 'image-showcase' && (
+          <div className="mb-8">
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <label className="flex items-center justify-center w-full h-40 border-2 border-dashed border-[#b08b2e] rounded cursor-pointer hover:bg-[#b08b2e]/10 transition">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    if (e.target.files && e.target.files[0] && onGalleryUpload) {
+                      onGalleryUpload(e.target.files[0]);
+                    }
+                  }}
+                />
+                <span className="text-[#b08b2e] font-bold text-xl">+</span>
+              </label>
+              {(project.gallery || []).map((img: string, idx: number) => (
+                <div key={idx} className="relative group">
+                  <img src={img} alt={`Gallery ${idx + 1}`} className="w-40 h-40 object-cover rounded border" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Remove Confirmation Modal */}
+      {showRemoveModal && (
+        <Modal open={true} onClose={() => setShowRemoveModal && setShowRemoveModal(false)}>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Confirm Removal</h3>
+            <p className="text-slate-600 mb-6">Are you sure you want to remove this project? This action will archive the project.</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowRemoveModal && setShowRemoveModal(false)}
+                className="px-4 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onRemove}
+                disabled={removing}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center"
+              >
+                {removing ? (
+                  <>
+                    <Icon icon="svg-spinners:bars-scale-fade" width="20" height="20" />
+                    <span className="ml-2">Removing...</span>
+                  </>
+                ) : "Remove"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
+// Main Projects component
 const Projects: React.FC = () => {
-  // Register toolbar actions so AdminLayout's NavBar can trigger them
-  const { setToolbarState, resetToolbarState } = useAdminToolbar();
-  
-  // State and handlers
-  const [welcomePreviewProject, setWelcomePreviewProject] = useState<Project | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  // State management
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Project>>({});
-  const [saving, setSaving] = useState(false);
-  const [adding, setAdding] = useState(false);
   const [addData, setAddData] = useState<Omit<Project, "id">>(emptyProject);
   const [addMode, setAddMode] = useState(false);
+  const [selectedArchivedProject, setSelectedArchivedProject] = useState<Project | null>(null);
+  const [welcomePreviewProject, setWelcomePreviewProject] = useState<Project | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showSidebarMobile, setShowSidebarMobile] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [addUploadProgress, setAddUploadProgress] = useState<number | null>(null);
-  const [showRemoveModal, setShowRemoveModal] = useState(false);
-  const [removing, setRemoving] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
-  const [selectedArchivedProject, setSelectedArchivedProject] = useState<Project | null>(null);
-  const [showSidebarMobile, setShowSidebarMobile] = useState(false);
   const [desktopPreviewProject, setDesktopPreviewProject] = useState<Project | null>(null);
 
-  // Use custom hook for project data management
-  const {
-    projects,
-    loading,
-    error,
-    archiveProjects,
-    archiveLoading,
-    fetchProjects,
-    fetchArchiveProjects,
-    updateProject,
-    addProject,
-    archiveAndRemoveProject,
-    restoreProject
-  } = useProjects();
+  // Use the projects hook
+  const { projects, archiveProjects, loading, fetchProjects, fetchArchiveProjects, addProject, updateProject, archiveAndRemoveProject } = useProjects();
 
-  // Memoize project list to prevent unnecessary re-renders
-  const projectList = useMemo(() => showArchive ? archiveProjects : projects, [showArchive, archiveProjects, projects]);
+  // Set up toolbar
+  const { setToolbarState, resetToolbarState } = useAdminToolbar();
 
-  // Prevent background scrolling when modal is open
-  useEffect(() => {
-    const isModalOpen = !!desktopPreviewProject || addMode || !!selectedArchivedProject || 
-                       (selectedId && !addMode) || drawerOpen || showSidebarMobile;
-    
-    if (isModalOpen) {
-      document.body.classList.add('overflow-hidden');
-    } else {
-      document.body.classList.remove('overflow-hidden');
-    }
-    
-    return () => {
-      document.body.classList.remove('overflow-hidden');
-    };
-  }, [desktopPreviewProject, addMode, selectedArchivedProject, selectedId, drawerOpen, showSidebarMobile]);
+  // Filter projects based on archive view
+  const projectList = showArchive ? archiveProjects : projects;
+  console.log("Project list:", projectList, "Show archive:", showArchive, "Projects:", projects, "Archive projects:", archiveProjects);
 
-  // Wire navbar tools to this page's actions
+  // Set up toolbar actions
   useEffect(() => {
     setToolbarState({
       onProjectAdd: () => {
@@ -110,50 +512,64 @@ const Projects: React.FC = () => {
         setSelectedId(null);
         setAddData(emptyProject);
       },
-      onProjectToggleArchive: () => setShowArchive((v) => !v),
+      onProjectToggleArchive: () => setShowArchive(v => !v),
       isProjectArchive: showArchive,
-      onToggleMenu: () => setShowSidebarMobile((v) => !v),
+      onToggleMenu: () => setShowSidebarMobile(v => !v),
     });
     return () => {
       resetToolbarState();
     };
   }, [setToolbarState, resetToolbarState, showArchive]);
 
-  // Keep isProjectArchive in sync when toggled elsewhere
+  // Keep toolbar in sync
   useEffect(() => {
     setToolbarState({ isProjectArchive: showArchive });
   }, [showArchive, setToolbarState]);
 
-  // Fetch projects from Firestore
+  // Fetch projects
   useEffect(() => {
-    fetchProjects();
+    console.log("Fetching projects...");
+    fetchProjects().then(() => {
+      console.log("Projects fetched successfully");
+    }).catch((error) => {
+      console.error("Error fetching projects:", error);
+    });
   }, [fetchProjects]);
 
   // Fetch archive projects
   useEffect(() => {
     if (!showArchive) return;
-    fetchArchiveProjects();
-    // Clear selection when toggling archive mode
+    console.log("Fetching archive projects...");
+    fetchArchiveProjects().then(() => {
+      console.log("Archive projects fetched successfully");
+    }).catch((error) => {
+      console.error("Error fetching archive projects:", error);
+    });
     setSelectedId(null);
     setEditData({});
     setAddMode(false);
     setSelectedArchivedProject(null);
   }, [showArchive, fetchArchiveProjects]);
 
-  // When selectedId changes, update editData
+  // Update editData when selected project changes
   useEffect(() => {
     if (selectedId && !addMode) {
-      const proj = projects.find((p) => p.id === selectedId);
+      const proj = projects.find(p => p.id === selectedId);
       if (proj) setEditData({ ...proj });
     }
   }, [selectedId, projects, addMode]);
 
-  // Handle field change with useCallback to prevent recreation
+  // Handle field changes
   const handleChange = useCallback((field: keyof Project, value: any) => {
-    setEditData((prev) => ({ ...prev, [field]: value }));
+    setEditData(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  // Save changes to Firestore
+  // Handle add field changes
+  const handleAddChange = useCallback((field: keyof Project, value: any) => {
+    setAddData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  // Save project changes
   const handleSave = useCallback(async () => {
     if (!selectedId) return;
     setSaving(true);
@@ -183,50 +599,102 @@ const Projects: React.FC = () => {
   }, [addData, addProject]);
 
   // Upload image to Vercel Blob and return URL
-  const uploadToVercelBlob = useCallback(async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    // You may need to set your Vercel Blob token here
-    const res = await fetch("https://blob.vercel-storage.com/api/upload", {
-      method: "POST",
-      body: formData,
-      headers: {
-        // 'Authorization': `Bearer YOUR_BLOB_TOKEN`,
-      },
-    });
-    if (!res.ok) throw new Error("Failed to upload to Vercel Blob");
-    const data = await res.json();
-    return data.url || data.fileUrl || data.urlOrFileUrl; // adjust based on API response
+  const uploadToVercelBlob = useCallback(async (file: File): Promise<string> => {
+    console.log("Starting upload for file:", file.name, file.type, file.size);
+    
+    // Check if we have the required token
+    const blobToken = import.meta.env.VITE_BLOB_READ_WRITE_TOKEN;
+    console.log("Blob token:", blobToken ? "Available" : "Missing");
+    
+    if (!blobToken) {
+      const error = new Error("Vercel Blob token is not configured. Please set VITE_BLOB_READ_WRITE_TOKEN in your environment variables.");
+      toast.error(error.message);
+      throw error;
+    }
+
+    try {
+      console.log("Using Vercel Blob client to upload file...");
+      
+      // Use the official Vercel Blob client
+      const blob = await put(file.name, file, {
+        access: 'public',
+        token: blobToken,
+      });
+      
+      console.log("Upload successful, URL:", blob.url);
+      return blob.url;
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Upload failed: " + (error as Error).message);
+      throw error;
+    }
   }, []);
 
-  // Image upload for edit
+  // Handle image upload for edit mode
   const handleImageUpload = useCallback(async (file: File) => {
     if (!selectedId) return;
-    setUploadProgress(0);
+
+    const toastId = toast.info(`Uploading ${file.name}...`, {
+      progress: 0,
+      autoClose: false,
+      closeOnClick: false,
+      pauseOnHover: false,
+      draggable: false,
+    });
+
     try {
       const url = await uploadToVercelBlob(file);
-      setEditData((prev) => ({ ...prev, image: url }));
-      setUploadProgress(null);
+
+      toast.update(toastId, {
+        render: "Upload complete!",
+        type: "success",
+        autoClose: 2000,
+        progress: undefined,
+      });
+
+      setEditData(prev => ({ ...prev, image: url }));
     } catch (error) {
-      toast.error("Image upload failed: " + (error as Error).message);
-      setUploadProgress(null);
+      toast.update(toastId, {
+        render: `Upload failed: ${(error as Error).message}`,
+        type: "error",
+        autoClose: 5000,
+        progress: undefined,
+      });
     }
   }, [selectedId, uploadToVercelBlob]);
 
-  // Image upload for add
+  // Handle image upload for add mode
   const handleAddImageUpload = useCallback(async (file: File) => {
-    setAddUploadProgress(0);
+    const toastId = toast.info(`Uploading ${file.name}...`, {
+      progress: 0,
+      autoClose: false,
+      closeOnClick: false,
+      pauseOnHover: false,
+      draggable: false,
+    });
+
     try {
       const url = await uploadToVercelBlob(file);
-      setAddData((prev) => ({ ...prev, image: url }));
-      setAddUploadProgress(null);
+
+      toast.update(toastId, {
+        render: "Upload complete!",
+        type: "success",
+        autoClose: 2000,
+        progress: undefined,
+      });
+
+      setAddData(prev => ({ ...prev, image: url }));
     } catch (error) {
-      toast.error("Image upload failed: " + (error as Error).message);
-      setAddUploadProgress(null);
+      toast.update(toastId, {
+        render: `Upload failed: ${(error as Error).message}`,
+        type: "error",
+        autoClose: 5000,
+        progress: undefined,
+      });
     }
   }, [uploadToVercelBlob]);
 
-  // Remove project with archive
+  // Handle remove project
   const handleRemove = useCallback(async () => {
     if (!selectedId) return;
     setRemoving(true);
@@ -242,27 +710,10 @@ const Projects: React.FC = () => {
     setShowRemoveModal(false);
   }, [selectedId, archiveAndRemoveProject]);
 
-  // Sidebar animation variants
-  const sidebarVariants = useMemo(() => ({
-    initial: { x: -40, opacity: 0 },
-    animate: { x: 0, opacity: 1, transition: { staggerChildren: 0.05 } },
-  }), []);
-
-  const itemVariants = useMemo(() => ({
-    initial: { opacity: 0 }, // Fade in
-    animate: { opacity: 1 }, // Fully visible
-    exit: { opacity: 0, transition: { duration: 0.3 } }, // Fade out
-  }), []);
-
-  // Stable onChange for add mode to prevent input focus loss
-  const handleAddChange = useCallback((field: keyof Project, value: any) => {
-    setAddData((prev) => ({ ...prev, [field]: value }));
-  }, []);
-
   // Main content logic
-  let detailMode: "add" | "edit" | "preview" | null = null;
+  let detailMode: ProjectDetailMode | null = null;
   let detailProject: any = null;
-  // Always show add form if addMode is true
+
   if (addMode) {
     detailMode = "add";
     detailProject = addData;
@@ -274,390 +725,444 @@ const Projects: React.FC = () => {
     detailProject = editData;
   }
 
+  // Sidebar animation variants
+  const sidebarVariants = useMemo(() => ({
+    initial: { x: -40, opacity: 0 },
+    animate: { x: 0, opacity: 1, transition: { staggerChildren: 0.05 } },
+  }), []);
+
+  const itemVariants = useMemo(() => ({
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0, transition: { duration: 0.3 } },
+  }), []);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 min-h-screen overflow-hidden w-full">
+    <div className="grid grid-cols-1 md:grid-cols-12 h-full overflow-hidden w-full">
       {/* Sidebar: Drawer on mobile, static on desktop */}
-      {/* Desktop Sidebar */}
-      <motion.aside
-        className="hidden"
-        initial={false}
+      <motion.aside 
+        initial="initial"
         animate="animate"
         variants={sidebarVariants}
+        className="hidden md:block md:col-span-4 w-64 lg:col-span-3 xl:col-span-2 h-full overflow-y-auto border-r border-slate-200 bg-white p-4"
       >
-        <div className="contents">
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h2
-              className="text-xl font-bold text-[#b08b2e] cursor-pointer select-none"
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-[#b08b2e]">{showArchive ? 'Archived Projects' : 'Projects'}</h2>
+          <button
+            onClick={() => setShowArchive(v => !v)}
+            className={`p-1 rounded ${showArchive ? 'bg-[#b08b2e] text-white' : 'text-[#b08b2e]'}`}
+          >
+            <Icon icon="solar:archive-minimalistic-broken" width="24" height="24" />
+          </button>
+        </div>
+        <div className="space-y-2">
+             {!showArchive && (
+            <button
+              type="button"
+              aria-label="Add new project"
+              className="flex items-center w-full bg-white rounded-lg shadow p-2 border border-dashed border-[#b08b2e]/50 hover:border-[#b08b2e] transition focus:outline-none focus:ring-2 focus:ring-[#b08b2e]/40"
               onClick={() => {
+                setAddMode(true);
                 setSelectedId(null);
-                setSelectedArchivedProject(null);
-                setAddMode(false);
+                setAddData(emptyProject);
               }}
             >
-              {showArchive ? 'Archived Projects' : 'Projects'}
-            </h2>
-            {!showArchive && (
-              <button
-                className={`px-2 py-2 rounded-lg font-semibold transition ${addMode ? 'bg-[#a07a1e] text-white' : 'bg-[#b08b2e] text-white hover:bg-[#a07a1e]'}`}
-                onClick={() => {
-                  setAddMode(true);
-                  setSelectedId(null);
-                  setAddData(emptyProject);
-                }}
-              >
-                <Icon icon="solar:add-folder-broken" width="24" height="24" />
-              </button>
-            )}
-            <button
-              className={`px-4 py-2 rounded font-semibold shadow transition ${showArchive ? 'bg-[#b08b2e] text-white' : 'bg-gray-200 text-[#b08b2e] hover:bg-[#b08b2e]/10'}`}
-              onClick={() => setShowArchive((v) => !v)}
-            >
-              {showArchive ? (
-                <Icon icon="solar:archive-minimalistic-broken" width="24" height="24" />
-              ) : (
-                <Icon icon="solar:archive-broken" width="24" height="24" />
-              )}
+              <div className="w-full flex items-center justify-center py-2">
+                <Icon icon="solar:add-circle-bold" width="24" height="24" className="text-[#b08b2e]" />
+                <span className="ml-2 font-semibold text-[#b08b2e]">Add Project</span>
+              </div>
             </button>
-          </div>
-          <div className="flex-1 p-3 overflow-y-auto">
-            <AnimatePresence>
-              {projectList.map((project) => (
-                showArchive && project
-                  ? (
-                    <div
-                      key={project.id}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 cursor-pointer transition-all border border-transparent hover:border-[#b08b2e] ${selectedArchivedProject && selectedArchivedProject.id === project.id ? "bg-[#b08b2e]/10 border-[#b08b2e]" : ""}`}
-                      onClick={() => {
-                        setSelectedArchivedProject(project);
-                        setSelectedId(null);
-                        setAddMode(false);
-                      }}
-                    >
-                      <img
-                        src={project.image || "https://via.placeholder.com/48x32?text=No+Image"}
-                        alt={project.title}
-                        className="w-12 h-8 object-cover rounded border"
-                      />
-                      <span className="font-medium text-slate-800">{project.title}</span>
-                      <button
-                        className="ml-auto px-2 py-1 rounded bg-[#b08b2e] text-white text-xs font-semibold hover:bg-[#a07a1e] transition"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          await restoreProject(project);
-                          setSelectedArchivedProject(null);
-                        }}
-                      >
-                        Restore
-                      </button>
+          )}
+          <AnimatePresence>
+            {projectList.map((project) => (
+              showArchive && project
+                ? (
+                  <div
+                    key={project.id}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 cursor-pointer transition-all border border-transparent hover:border-[#b08b2e] ${selectedArchivedProject && selectedArchivedProject.id === project.id ? "bg-[#b08b2e]/10 border-[#b08b2e]" : ""}`}
+                    onClick={() => {
+                      setSelectedArchivedProject(project);
+                      setSelectedId(null);
+                      setAddMode(false);
+                    }}
+                  >
+                    <img
+                      src={project.image || `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32" viewBox="0 0 48 32"><rect width="48" height="32" fill="%23f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="6" fill="%23999">No Image</text></svg>`}
+                      alt={project.title}
+                      className="w-12 h-8 object-cover rounded border"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-slate-900 truncate">{project.title}</div>
+                      <div className="text-xs text-slate-500 truncate">{project.formalName}</div>
                     </div>
-                  )
-                  : (!showArchive && project && (
-                    <motion.div
-                      key={project.id}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 cursor-pointer transition-all border border-transparent hover:border-[#b08b2e] ${selectedId === project.id && !addMode ? "bg-[#b08b2e]/10 border-[#b08b2e]" : ""}`}
-                      onClick={() => {
-                        setSelectedId(project.id);
-                        setAddMode(false);
-                        setSelectedArchivedProject(null);
-                      }}
-                      variants={itemVariants}
-                      initial="initial"
-                      animate="animate"
-                      exit="initial"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                      layout
-                    >
-                      <img
-                        src={project.image || "https://via.placeholder.com/48x32?text=No+Image"}
-                        alt={project.title}
-                        className="w-12 h-8 object-cover rounded border"
-                      />
-                      <span className="font-medium text-slate-800">{project.title}</span>
-                    </motion.div>
-                  ))
-              ))}
-            </AnimatePresence>
-            {showArchive
-              ? (!archiveLoading && archiveProjects.length === 0 && (
-                <div className="text-slate-400 text-center mt-8">No archived projects found.</div>
-              ))
-              : (projects.length === 0 && !loading && (
-                <div className="text-slate-400 text-center mt-8">No projects found.</div>
-              ))}
-          </div>
+                  </div>
+                )
+                : (!showArchive && project && (
+                  <motion.div
+                    key={project.id}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 cursor-pointer transition-all border border-transparent hover:border-[#b08b2e] ${selectedId === project.id && !addMode ? "bg-[#b08b2e]/10 border-[#b08b2e]" : ""}`}
+                    onClick={() => {
+                      setSelectedId(project.id);
+                      setAddMode(false);
+                      setSelectedArchivedProject(null);
+                    }}
+                    variants={itemVariants}
+                  >
+                    <img
+                      src={project.image || `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32" viewBox="0 0 48 32"><rect width="48" height="32" fill="%23f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="6" fill="%23999">No Image</text></svg>`}
+                      alt={project.title}
+                      className="w-12 h-8 object-cover rounded border"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-slate-900 truncate">{project.title}</div>
+                      <div className="text-xs text-slate-500 truncate">{project.formalName}</div>
+                    </div>
+                  </motion.div>
+                ))
+            ))}
+          </AnimatePresence>
         </div>
       </motion.aside>
 
-      {/* Mobile Bottom Sheet Project List */}
       <AnimatePresence>
         {showSidebarMobile && (
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed inset-x-0 bottom-0 z-[3999] bg-white rounded-t-2xl shadow-2xl border-t border-slate-200 flex flex-col max-h-[80vh]"
+          <DragCloseDrawer 
+            open={showSidebarMobile} 
+            setOpen={setShowSidebarMobile}
+            drawerHeight="90vh"
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-              <h2 className="text-lg font-bold text-[#b08b2e]">{showArchive ? 'Archived Projects' : 'Projects'}</h2>
-              <button
-                className="p-2 text-[#b08b2e]"
-                onClick={() => setShowSidebarMobile(false)}
-              >
-                <Icon icon="solar:close-circle-broken" width="28" height="28" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3">
-              <AnimatePresence>
-                {projectList.map((project) => (
-                  showArchive && project
-                    ? (
-                      <div
-                        key={project.id}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 cursor-pointer transition-all border border-transparent hover:border-[#b08b2e] ${selectedArchivedProject && selectedArchivedProject.id === project.id ? "bg-[#b08b2e]/10 border-[#b08b2e]" : ""}`}
-                        onClick={() => {
-                          setSelectedArchivedProject(project);
-                          setSelectedId(null);
-                          setAddMode(false);
-                          setShowSidebarMobile(false);
-                        }}
-                      >
-                        <img
-                          src={project.image || "https://via.placeholder.com/48x32?text=No+Image"}
-                          alt={project.title}
-                          className="w-12 h-8 object-cover rounded border"
-                        />
-                        <span className="font-medium text-slate-800">{project.title}</span>
-                        <button
-                          className="ml-auto px-2 py-1 rounded bg-[#b08b2e] text-white text-xs font-semibold hover:bg-[#a07a1e] transition"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await restoreProject(project);
-                            setSelectedArchivedProject(null);
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 sticky top-0 bg-white z-10">
+                <h2 className="text-lg font-bold text-[#b08b2e]">{showArchive ? 'Archived Projects' : 'Projects'}</h2>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setShowArchive(v => !v)}
+                    className={`p-1 rounded ${showArchive ? 'bg-[#b08b2e] text-white' : 'text-[#b08b2e]'}`}
+                  >
+                    <Icon icon="solar:archive-minimalistic-broken" width="24" height="24" />
+                  </button>
+                  <button
+                    className="p-2 text-[#b08b2e]"
+                    onClick={() => setShowSidebarMobile(false)}
+                  >
+                    <Icon icon="solar:close-circle-broken" width="28" height="28" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 pb-16">
+                <AnimatePresence>
+                  {projectList.map((project) => (
+                    showArchive && project
+                      ? (
+                        <div
+                          key={project.id}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 cursor-pointer transition-all border border-transparent hover:border-[#b08b2e] ${selectedArchivedProject && selectedArchivedProject.id === project.id ? "bg-[#b08b2e]/10 border-[#b08b2e]" : ""}`}
+                          onClick={() => {
+                            setSelectedArchivedProject(project);
+                            setSelectedId(null);
+                            setAddMode(false);
                             setShowSidebarMobile(false);
                           }}
                         >
-                          Restore
-                        </button>
+                          <img
+                            src={project.image || `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32" viewBox="0 0 48 32"><rect width="48" height="32" fill="%23f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="6" fill="%23999">No Image</text></svg>`}
+                            alt={project.title}
+                            className="w-12 h-8 object-cover rounded border"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-slate-900 truncate">{project.title}</div>
+                            <div className="text-xs text-slate-500 truncate">{project.formalName}</div>
+                          </div>
+                        </div>
+                      )
+                      : (!showArchive && project && (
+                        <motion.div
+                          key={project.id}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 cursor-pointer transition-all border border-transparent hover:border-[#b08b2e] ${selectedId === project.id && !addMode ? "bg-[#b08b2e]/10 border-[#b08b2e]" : ""}`}
+                          onClick={() => {
+                            setSelectedId(project.id);
+                            setAddMode(false);
+                            setSelectedArchivedProject(null);
+                            setShowSidebarMobile(false);
+                          }}
+                          variants={itemVariants}
+                        >
+                          <img
+                            src={project.image || `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32" viewBox="0 0 48 32"><rect width="48" height="32" fill="%23f0f0f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="6" fill="%23999">No Image</text></svg>`}
+                            alt={project.title}
+                            className="w-12 h-8 object-cover rounded border"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-slate-900 truncate">{project.title}</div>
+                            <div className="text-xs text-slate-500 truncate">{project.formalName}</div>
+                          </div>
+                        </motion.div>
+                      ))
+                  ))}
+                  {!showArchive && (
+                    <button
+                      type="button"
+                      aria-label="Add new project"
+                      className="flex items-center w-full bg-white rounded-lg shadow p-2 border border-dashed border-[#b08b2e]/50 hover:border-[#b08b2e] transition focus:outline-none focus:ring-2 focus:ring-[#b08b2e]/40"
+                      onClick={() => {
+                        setAddMode(true);
+                        setSelectedId(null);
+                        setAddData(emptyProject);
+                        setShowSidebarMobile(false);
+                      }}
+                    >
+                      <div className="w-full flex items-center justify-center py-2">
+                        <Icon icon="solar:add-circle-bold" width="24" height="24" className="text-[#b08b2e]" />
+                        <span className="ml-2 font-semibold text-[#b08b2e]">Add Project</span>
                       </div>
-                    )
-                    : (!showArchive && project && (
-                      <motion.div
-                        key={project.id}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-2 cursor-pointer transition-all border border-transparent hover:border-[#b08b2e] ${selectedId === project.id && !addMode ? "bg-[#b08b2e]/10 border-[#b08b2e]" : ""}`}
-                        onClick={() => {
-                          setSelectedId(project.id);
-                          setAddMode(false);
-                          setSelectedArchivedProject(null);
-                          setShowSidebarMobile(false);
-                        }}
-                        variants={itemVariants}
-                        initial="initial"
-                        animate="animate"
-                        exit="initial"
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.98 }}
-                        layout
-                      >
-                        <img
-                          src={project.image || "https://via.placeholder.com/48x32?text=No+Image"}
-                          alt={project.title}
-                          className="w-12 h-8 object-cover rounded border"
-                        />
-                        <span className="font-medium text-slate-800">{project.title}</span>
-                      </motion.div>
-                    ))
-                ))}
-              </AnimatePresence>
-              {showArchive
-                ? (!archiveLoading && archiveProjects.length === 0 && (
-                  <div className="text-slate-400 text-center mt-8">No archived projects found.</div>
-                ))
-                : (projects.length === 0 && !loading && (
-                  <div className="text-slate-400 text-center mt-8">No projects found.</div>
-                ))}
+                    </button>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
-          </motion.div>
+          </DragCloseDrawer>
         )}
       </AnimatePresence>
-      
-      {/* Main content */}
-      <main className="flex flex-col items-center w-full overflow-hidden justify-start p-3 md:col-span-12">
-        {error && <div className="text-red-500 mb-4">{error}</div>}
-        {loading ? (
-          <div className="text-slate-500">Loading projects...</div>
-        ) : (
-          <>
-            {/* MOBILE: Welcome page project selection grid and DragCloseDrawer for preview/add/archive */}
-            <div className="w-full overflow-hidden">
-              {/* Show project selection grid if not in add/edit/archive/preview mode */}
-              {!addMode && !selectedId && !selectedArchivedProject && (
-                <div className="w-full">
-                  <h1 className="text-2xl font-bold text-[#b08b2e] mb-4 text-center">Select a Project</h1>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-2">
 
-                    {projectList.map((project) => (
-                      <button
-                        key={project.id}
-                        className="flex flex-col items-center bg-white rounded-lg shadow p-2 border border-[#b08b2e]/30 hover:border-[#b08b2e] transition"
-                        onClick={() => {
-                          if (window.innerWidth < 768) {
-                            setWelcomePreviewProject(project);
-                            setDrawerOpen(true);
-                          } else {
-                            setDesktopPreviewProject(project);
-                          }
-                        }}
-                      >
-                        <img
-                          src={project.image || "https://via.placeholder.com/120x80?text=No+Image"}
-                          alt={project.title}
-                          className="w-full h-24 object-cover rounded mb-2 border"
-                        />
-                        <span className="font-semibold text-[#b08b2e] text-center text-sm line-clamp-2">{project.title}</span>
-                      </button>
-                    ))}
-                    {!showArchive && (
-                      <button
-                        type="button"
-                        aria-label="Add new project"
-                        className="flex flex-col items-center bg-white rounded-lg shadow p-2 border border-dashed border-[#b08b2e]/50 hover:border-[#b08b2e] transition focus:outline-none focus:ring-2 focus:ring-[#b08b2e]/40"
-                        onClick={() => {
-                          if (window.innerWidth < 768) {
-                            setAddMode(true);
-                          } else {
-                            setAddMode(true);
-                            setDesktopPreviewProject(null);
-                          }
-                        }}
-                      >
-                        <div className="w-full h-24 rounded mb-2 border-2 border-dashed border-[#b08b2e] grid place-content-center bg-[#b08b2e]/5">
-                          <Icon icon="solar:add-folder-broken" width="28" height="28" className="text-[#b08b2e]" />
-                        </div>
-                        <span className="font-semibold text-[#b08b2e] text-center text-sm">Add Project</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
+      {/* Main content area - Desktop */}
+      <main className="hidden md:block md:col-span-8 lg:col-span-9 xl:col-span-10 h-[calc(100vh-5rem)] overflow-hidden">
+        {/* Welcome view */}
+        {!detailMode && (
+          <div className="h-full flex flex-col items-center justify-center p-4 text-center">
+            <div className="max-w-md">
+              <Icon icon="solar:documents-bold-duotone" width="64" height="64" className="text-[#b08b2e] mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">Projects Management</h1>
+              <p className="text-slate-600 mb-6">
+                {showArchive
+                  ? "Browse your archived projects. Select a project to view its details."
+                  : "Select a project from the list to view or edit its details, or add a new project."}
+              </p>
+              {!showArchive && (
+                <button
+                  onClick={() => {
+                    setAddMode(true);
+                    setSelectedId(null);
+                    setAddData(emptyProject);
+                  }}
+                  className="px-6 py-3 bg-[#b08b2e] text-white rounded-lg hover:bg-[#b08b2e]/90 flex items-center mx-auto"
+                >
+                  <Icon icon="solar:add-circle-bold" width="24" height="24" />
+                  <span className="ml-2">Add New Project</span>
+                </button>
               )}
-              
-              {/* DragCloseDrawer for project preview */}
-              <DragCloseDrawer open={drawerOpen && !!welcomePreviewProject} setOpen={setDrawerOpen}>
-                {welcomePreviewProject && (
-                  <ProjectDetailContainer
-                    mode="preview"
-                    project={welcomePreviewProject}
-                    onChange={handleChange}
-                    onSave={handleSave}
-                    onClose={() => {
-                      setDrawerOpen(false);
-                      setTimeout(() => setWelcomePreviewProject(null), 300);
-                    }}
-                  />
-                )}
-              </DragCloseDrawer>
-              
-              {/* DragCloseDrawer for add mode (MOBILE ONLY) */}
-              {typeof window !== 'undefined' && window.innerWidth < 768 && (
-                <DragCloseDrawer open={addMode} setOpen={(open) => { if (!open) setAddMode(false); }}>
-                  <ProjectDetailContainer
-                    mode="add"
-                    project={addData}
-                    onChange={handleAddChange}
-                    onAdd={handleAdd}
-                    onImageUpload={handleAddImageUpload}
-                    onGalleryUpload={async (file) => {
-                      setAddUploadProgress(0);
-                      try {
-                        const url = await uploadToVercelBlob(file);
-                        setAddData((d) => ({ ...d, gallery: [...(d.gallery || []), url] }));
-                      } catch (error) {
-                        toast.error("Gallery image upload failed: " + (error as Error).message);
-                      }
-                      setAddUploadProgress(null);
-                    }}
-                    loading={adding}
-                    addUploadProgress={addUploadProgress}
-                  />
-                </DragCloseDrawer>
-              )}
-              
-              {/* DragCloseDrawer for archive preview */}
-              <DragCloseDrawer open={!!selectedArchivedProject} setOpen={(open) => { if (!open) setSelectedArchivedProject(null); }}>
-                {selectedArchivedProject && (
-                  <ProjectDetailContainer
-                    mode="preview"
-                    project={selectedArchivedProject}
-                    isArchived={true}
-                    onClose={() => setSelectedArchivedProject(null)}
-                  />
-                )}
-              </DragCloseDrawer>
-              
-              {/* DragCloseDrawer for edit mode */}
-              <DragCloseDrawer open={!!selectedId && !addMode} setOpen={(open) => { if (!open) setSelectedId(null); }}>
-                {selectedId && (
-                  <ProjectDetailContainer
-                    mode="edit"
-                    project={editData}
-                    onChange={handleChange}
-                    onSave={handleSave}
-                    onImageUpload={handleImageUpload}
-                    onGalleryUpload={async (file) => {
-                      setUploadProgress(0);
-                      try {
-                        const url = await uploadToVercelBlob(file);
-                        handleChange("gallery", [...(editData.gallery || []), url]);
-                      } catch (error) {
-                        toast.error("Gallery image upload failed: " + (error as Error).message);
-                      }
-                      setUploadProgress(null);
-                    }}
-                    loading={saving}
-                    uploadProgress={uploadProgress}
-                    showRemoveModal={showRemoveModal}
-                    setShowRemoveModal={setShowRemoveModal}
-                    removing={removing}
-                    onRemove={handleRemove}
-                  />
-                )}
-              </DragCloseDrawer>
+              <button
+                onClick={() => setShowSidebarMobile(true)}
+                className="mt-4 px-6 py-3 md:hidden border border-[#b08b2e] text-[#b08b2e] rounded-lg hover:bg-[#b08b2e]/10 flex items-center mx-auto"
+              >
+                <Icon icon="solar:list-broken" width="24" height="24" />
+                <span className="ml-2">View Projects</span>
+              </button>
             </div>
-            
-            {/* DESKTOP: Sidebar and main content as before */}
-            <div className="hidden">
-              {detailMode ? (
+          </div>
+        )}
+
+        {/* Project detail view */}
+        {detailMode && (
+          <div className="h-full ml-10 p-4 overflow-y-auto">
+            <ProjectDetailContainer
+              mode={detailMode}
+              project={detailProject}
+              isArchived={!!selectedArchivedProject}
+              onChange={detailMode === "add" ? handleAddChange : detailMode === "edit" ? handleChange : undefined}
+              onSave={detailMode === "edit" ? handleSave : undefined}
+              onAdd={detailMode === "add" ? handleAdd : undefined}
+              onImageUpload={detailMode === "add" ? handleAddImageUpload : detailMode === "edit" ? handleImageUpload : undefined}
+              onGalleryUpload={detailMode === "add"
+                ? async (file) => {
+                  const toastId = toast.info(`Uploading ${file.name}...`, {
+                    progress: 0,
+                    autoClose: false,
+                    closeOnClick: false,
+                    pauseOnHover: false,
+                    draggable: false,
+                  });
+
+                  try {
+                    const url = await uploadToVercelBlob(file);
+
+                    toast.update(toastId, {
+                      render: "Upload complete!",
+                      type: "success",
+                      autoClose: 2000,
+                      progress: undefined,
+                    });
+
+                    setAddData(d => ({ ...d, gallery: [...(d.gallery || []), url] }));
+                  } catch (error) {
+                    toast.update(toastId, {
+                      render: `Upload failed: ${(error as Error).message}`,
+                      type: "error",
+                      autoClose: 5000,
+                      progress: undefined,
+                    });
+                  }
+                }
+                : detailMode === "edit"
+                  ? async (file) => {
+                  const toastId = toast.info(`Uploading ${file.name}...`, {
+                    progress: 0,
+                    autoClose: false,
+                    closeOnClick: false,
+                    pauseOnHover: false,
+                    draggable: false,
+                  });
+
+                  try {
+                    const url = await uploadToVercelBlob(file);
+
+                    toast.update(toastId, {
+                      render: "Upload complete!",
+                      type: "success",
+                      autoClose: 2000,
+                      progress: undefined,
+                    });
+
+                    handleChange("gallery", [...(editData.gallery || []), url]);
+                  } catch (error) {
+                    toast.update(toastId, {
+                      render: `Upload failed: ${(error as Error).message}`,
+                      type: "error",
+                      autoClose: 5000,
+                      progress: undefined,
+                    });
+                  }
+                }
+                  : undefined}
+              onRemove={detailMode === "edit" ? handleRemove : undefined}
+              onClose={detailMode === "preview" ? () => setSelectedArchivedProject(null) : undefined}
+              loading={detailMode === "add" ? adding : detailMode === "edit" ? saving : false}
+              uploadProgress={uploadProgress}
+              addUploadProgress={addUploadProgress}
+              showRemoveModal={showRemoveModal}
+              setShowRemoveModal={setShowRemoveModal}
+              removing={removing}
+            />
+          </div>
+        )}
+      </main>
+
+      {/* Mobile view */}
+      <main className="md:hidden col-span-12 h-screen overflow-hidden">
+        {/* Welcome view */}
+        {!detailMode && !showSidebarMobile && (
+          <div className="h-full flex flex-col items-center justify-center p-4 text-center">
+            <div className="max-w-md">
+              <Icon icon="solar:documents-bold-duotone" width="64" height="64" className="text-[#b08b2e] mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">Projects Management</h1>
+              <p className="text-slate-600 mb-6">
+                {showArchive
+                  ? "Browse your archived projects. Select a project to view its details."
+                  : "Select a project from the list to view or edit its details, or add a new project."}
+              </p>
+              {!showArchive && (
+                <button
+                  onClick={() => {
+                    setAddMode(true);
+                    setSelectedId(null);
+                    setAddData(emptyProject);
+                  }}
+                  className="px-6 py-3 bg-[#b08b2e] text-white rounded-lg hover:bg-[#b08b2e]/90 flex items-center mx-auto"
+                >
+                  <Icon icon="solar:add-circle-bold" width="24" height="24" />
+                  <span className="ml-2">Add New Project</span>
+                </button>
+              )}
+              <button
+                onClick={() => setShowSidebarMobile(true)}
+                className="mt-4 px-6 py-3 border border-[#b08b2e] text-[#b08b2e] rounded-lg hover:bg-[#b08b2e]/10 flex items-center mx-auto"
+              >
+                <Icon icon="solar:list-broken" width="24" height="24" />
+                <span className="ml-2">View Projects</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Project detail view */}
+        {detailMode && (
+          <div className="h-full">
+            {/* Mobile drawer for project detail */}
+            <DragCloseDrawer open={!!(selectedId || selectedArchivedProject || (addMode && window.innerWidth < 768))} setOpen={(open) => {
+              if (!open) {
+                if (addMode) setAddMode(false);
+                if (selectedId) setSelectedId(null);
+                if (selectedArchivedProject) setSelectedArchivedProject(null);
+              }
+            }}>
+              {(selectedId || selectedArchivedProject || addMode) && (
                 <ProjectDetailContainer
                   mode={detailMode}
                   project={detailProject}
-                  isArchived={selectedArchivedProject !== null}
+                  isArchived={!!selectedArchivedProject}
                   onChange={detailMode === "add" ? handleAddChange : detailMode === "edit" ? handleChange : undefined}
                   onSave={detailMode === "edit" ? handleSave : undefined}
                   onAdd={detailMode === "add" ? handleAdd : undefined}
                   onImageUpload={detailMode === "add" ? handleAddImageUpload : detailMode === "edit" ? handleImageUpload : undefined}
                   onGalleryUpload={detailMode === "add"
                     ? async (file) => {
-                      setAddUploadProgress(0);
+                      const toastId = toast.info(`Uploading ${file.name}...`, {
+                        progress: 0,
+                        autoClose: false,
+                        closeOnClick: false,
+                        pauseOnHover: false,
+                        draggable: false,
+                      });
+
                       try {
                         const url = await uploadToVercelBlob(file);
-                        setAddData((d) => ({ ...d, gallery: [...(d.gallery || []), url] }));
+
+                        toast.update(toastId, {
+                          render: "Upload complete!",
+                          type: "success",
+                          autoClose: 2000,
+                          progress: undefined,
+                        });
+
+                        setAddData(d => ({ ...d, gallery: [...(d.gallery || []), url] }));
                       } catch (error) {
-                        toast.error("Gallery image upload failed: " + (error as Error).message);
+                        toast.update(toastId, {
+                          render: `Upload failed: ${(error as Error).message}`,
+                          type: "error",
+                          autoClose: 5000,
+                          progress: undefined,
+                        });
                       }
-                      setAddUploadProgress(null);
                     }
                     : detailMode === "edit"
                       ? async (file) => {
-                        setUploadProgress(0);
-                        try {
-                          const url = await uploadToVercelBlob(file);
-                          handleChange("gallery", [...(editData.gallery || []), url]);
-                        } catch (error) {
-                          toast.error("Gallery image upload failed: " + (error as Error).message);
-                        }
-                        setUploadProgress(null);
+                      const toastId = toast.info(`Uploading ${file.name}...`, {
+                        progress: 0,
+                        autoClose: false,
+                        closeOnClick: false,
+                        pauseOnHover: false,
+                        draggable: false,
+                      });
+
+                      try {
+                        const url = await uploadToVercelBlob(file);
+
+                        toast.update(toastId, {
+                          render: "Upload complete!",
+                          type: "success",
+                          autoClose: 2000,
+                          progress: undefined,
+                        });
+
+                        handleChange("gallery", [...(editData.gallery || []), url]);
+                      } catch (error) {
+                        toast.update(toastId, {
+                          render: `Upload failed: ${(error as Error).message}`,
+                          type: "error",
+                          autoClose: 5000,
+                          progress: undefined,
+                        });
                       }
+                    }
                       : undefined}
                   onRemove={detailMode === "edit" ? handleRemove : undefined}
                   onClose={detailMode === "preview" ? () => setSelectedArchivedProject(null) : undefined}
@@ -668,89 +1173,15 @@ const Projects: React.FC = () => {
                   setShowRemoveModal={setShowRemoveModal}
                   removing={removing}
                 />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full w-full text-center p-8">
-                  <h1 className="text-3xl font-bold text-[#b08b2e] mb-4">Projects Management</h1>
-                  <p className="text-slate-600 mb-2">Select a Project from the Project List to view or edit its details, or click the + button to add a new project.</p>
-                  <p className="text-slate-400">You can also view archived projects by clicking the archive button.</p>
-                </div>
               )}
-            </div>
-          </>
+            </DragCloseDrawer>
+          </div>
         )}
-        
-        {/* Desktop modal preview/add */}
-        <AnimatePresence>
-          {(!!desktopPreviewProject || addMode) && (
-            <motion.div
-              className="fixed inset-0 z-[4000] flex items-center justify-center bg-black/50 p-4 md:p-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => { setDesktopPreviewProject(null); if (addMode) setAddMode(false); }}
-            >
-              <motion.div
-                className="relative bg-white w-full max-w-6xl h-[85vh] rounded-xl shadow-xl overflow-hidden"
-                initial={{ scale: 0.95, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 20 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  aria-label="Close"
-                  className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 hover:bg-white shadow"
-                  onClick={() => { setDesktopPreviewProject(null); if (addMode) setAddMode(false); }}
-                >
-                  <Icon icon="solar:close-circle-broken" width="28" height="28" className="text-[#b08b2e]" />
-                </button>
-                <div className="h-full overflow-y-auto">
-                  {addMode ? (
-                    <ProjectDetailContainer
-                      mode="add"
-                      project={addData}
-                      onChange={handleAddChange}
-                      onAdd={handleAdd}
-                      onImageUpload={handleAddImageUpload}
-                      onGalleryUpload={async (file) => {
-                        setAddUploadProgress(0);
-                        try {
-                          const url = await uploadToVercelBlob(file);
-                          setAddData((d) => ({ ...d, gallery: [...(d.gallery || []), url] }));
-                        } catch (error) {
-                          toast.error("Gallery image upload failed: " + (error as Error).message);
-                        }
-                        setAddUploadProgress(null);
-                      }}
-                      loading={adding}
-                      addUploadProgress={addUploadProgress}
-                    />
-                  ) : desktopPreviewProject ? (
-                    <ProjectDetailContainer
-                      mode="preview"
-                      project={desktopPreviewProject}
-                      isArchived={false}
-                      onChange={handleChange}
-                      onSave={handleSave}
-                      onClose={() => setDesktopPreviewProject(null)}
-                    />
-                  ) : null}
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </main>
+
+      <ToastContainer position="top-center" />
     </div>
   );
 };
 
-// Add ToastContainer to the main render
-export default function ProjectsWithToast() {
-  return (
-    <>
-      <ToastContainer position="top-center" />
-      <Projects />
-    </>
-  );
-}
+export default Projects;

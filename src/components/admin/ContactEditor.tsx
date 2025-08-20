@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { db } from "../../firebase/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 
 interface ContactContent {
   address: string;
@@ -13,180 +12,194 @@ interface ContactContent {
   telegram: string;
 }
 
-const ContactEditor: React.FC = () => {
-  const [contact, setContact] = useState<ContactContent>({
-    address: "",
-    phone: "",
-    email: "",
-    facebook: "",
-    instagram: "",
-    viber: "",
-    whatsapp: "",
-    telegram: "",
-  });
-  const [loading, setLoading] = useState(true);
+interface SectionEditorProps<T> {
+  initialData: T;
+  onSave: (data: T) => Promise<void>;
+}
+
+const ContactEditor: React.FC<SectionEditorProps<ContactContent>> = ({ initialData, onSave }) => {
+  const [data, setData] = useState(initialData);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const fetchContact = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const docRef = doc(db, "homepage_content", "contact");
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          setContact(snap.data() as ContactContent);
-        }
-      } catch (err: any) {
-        setError("Failed to load contact content");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchContact();
-  }, []);
+    setData(initialData);
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setContact({ ...contact, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
     setSaving(true);
-    setError(null);
-    setSuccess(false);
     try {
-      const docRef = doc(db, "homepage_content", "contact");
-      await setDoc(docRef, contact, { merge: true });
-      setSuccess(true);
-    } catch (err: any) {
-      setError("Failed to save contact content");
+      await onSave(data);
+      toast.success("Contact section saved successfully!");
+    } catch (error) {
+      toast.error("Failed to save contact section: " + (error as Error).message);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div>
-      {loading ? (
-        <div className="text-gray-500">Loading...</div>
-      ) : (
-        <>
-          {/* Live Preview */}
-          <div className="mb-6 p-4 bg-gray-50 rounded border border-gray-200">
-            <div className="mb-2 font-bold text-lg text-[#b08b2e]">Live Preview</div>
-            <div className="mb-2"><span className="font-semibold">Address:</span> {contact.address}</div>
-            <div className="mb-2"><span className="font-semibold">Phone:</span> {contact.phone}</div>
-            <div className="mb-2"><span className="font-semibold">Email:</span> {contact.email}</div>
-            <div className="mb-2"><span className="font-semibold">Facebook:</span> {contact.facebook}</div>
-            <div className="mb-2"><span className="font-semibold">Instagram:</span> {contact.instagram}</div>
-            <div className="mb-2"><span className="font-semibold">Viber:</span> {contact.viber}</div>
-            <div className="mb-2"><span className="font-semibold">WhatsApp:</span> {contact.whatsapp}</div>
-            <div className="mb-2"><span className="font-semibold">Telegram:</span> {contact.telegram}</div>
+    <div className="space-y-6">
+      {/* Responsive Preview */}
+      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+        <h3 className="font-semibold text-lg mb-3 text-[#b08b2e]">Live Preview</h3>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+              <div className="mt-2 space-y-2">
+                <p className="text-gray-600">
+                  <span className="font-medium">Address:</span> {data.address || "123 Example Street, City, Country"}
+                </p>
+                <p className="text-gray-600">
+                  <span className="font-medium">Phone:</span> {data.phone || "+1 (555) 123-4567"}
+                </p>
+                <p className="text-gray-600">
+                  <span className="font-medium">Email:</span> {data.email || "info@example.com"}
+                </p>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Connect With Us</h3>
+              <div className="mt-2 flex flex-wrap gap-3">
+                {data.facebook && (
+                  <a href={data.facebook} className="text-blue-600 hover:underline">Facebook</a>
+                )}
+                {data.instagram && (
+                  <a href={data.instagram} className="text-blue-600 hover:underline">Instagram</a>
+                )}
+                {data.viber && (
+                  <a href={data.viber} className="text-blue-600 hover:underline">Viber</a>
+                )}
+                {data.whatsapp && (
+                  <a href={data.whatsapp} className="text-blue-600 hover:underline">WhatsApp</a>
+                )}
+                {data.telegram && (
+                  <a href={data.telegram} className="text-blue-600 hover:underline">Telegram</a>
+                )}
+              </div>
+            </div>
           </div>
-          <form className="space-y-4" onSubmit={e => { e.preventDefault(); handleSave(); }}>
-            <div>
-              <label className="block font-semibold mb-1">Address</label>
-              <textarea
-                name="address"
-                value={contact.address}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1 min-h-[60px]"
-                placeholder="Address"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Phone</label>
-              <input
-                type="text"
-                name="phone"
-                value={contact.phone}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="Phone"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={contact.email}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="Email"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block font-semibold mb-1">Facebook</label>
-                <input
-                  type="text"
-                  name="facebook"
-                  value={contact.facebook}
-                  onChange={handleChange}
-                  className="w-full border rounded px-2 py-1"
-                  placeholder="Facebook URL"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold mb-1">Instagram</label>
-                <input
-                  type="text"
-                  name="instagram"
-                  value={contact.instagram}
-                  onChange={handleChange}
-                  className="w-full border rounded px-2 py-1"
-                  placeholder="Instagram URL"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold mb-1">Viber</label>
-                <input
-                  type="text"
-                  name="viber"
-                  value={contact.viber}
-                  onChange={handleChange}
-                  className="w-full border rounded px-2 py-1"
-                  placeholder="Viber Link or Number"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold mb-1">WhatsApp</label>
-                <input
-                  type="text"
-                  name="whatsapp"
-                  value={contact.whatsapp}
-                  onChange={handleChange}
-                  className="w-full border rounded px-2 py-1"
-                  placeholder="WhatsApp Link or Number"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold mb-1">Telegram</label>
-                <input
-                  type="text"
-                  name="telegram"
-                  value={contact.telegram}
-                  onChange={handleChange}
-                  className="w-full border rounded px-2 py-1"
-                  placeholder="Telegram Link or Number"
-                />
-              </div>
-            </div>
-            {error && <div className="text-red-500">{error}</div>}
-            {success && <div className="text-green-600">Saved!</div>}
-            <button
-              type="submit"
-              className="bg-[#b08b2e] text-white px-4 py-2 rounded font-semibold hover:bg-[#a07a1e] transition"
-              disabled={saving}
-            >
-              {saving ? "Saving..." : "Save"}
-            </button>
-          </form>
-        </>
-      )}
+        </div>
+      </div>
+
+      {/* Edit Form */}
+      <div className="space-y-4">
+        <div>
+          <label className="block font-medium mb-1">Address</label>
+          <textarea
+            name="address"
+            value={data.address}
+            onChange={handleChange}
+            rows={3}
+            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+            placeholder="Company address..."
+          />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium mb-1">Phone</label>
+            <input
+              type="text"
+              name="phone"
+              value={data.phone}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="+1234567890"
+            />
+          </div>
+          
+          <div>
+            <label className="block font-medium mb-1">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={data.email}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="contact@example.com"
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium mb-1">Facebook URL</label>
+            <input
+              type="text"
+              name="facebook"
+              value={data.facebook}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="https://facebook.com/..."
+            />
+          </div>
+          
+          <div>
+            <label className="block font-medium mb-1">Instagram URL</label>
+            <input
+              type="text"
+              name="instagram"
+              value={data.instagram}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="https://instagram.com/..."
+            />
+          </div>
+          
+          <div>
+            <label className="block font-medium mb-1">Viber Link</label>
+            <input
+              type="text"
+              name="viber"
+              value={data.viber}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="Viber link or number"
+            />
+          </div>
+          
+          <div>
+            <label className="block font-medium mb-1">WhatsApp Link</label>
+            <input
+              type="text"
+              name="whatsapp"
+              value={data.whatsapp}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="WhatsApp link or number"
+            />
+          </div>
+          
+          <div>
+            <label className="block font-medium mb-1">Telegram Link</label>
+            <input
+              type="text"
+              name="telegram"
+              value={data.telegram}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="Telegram link or number"
+            />
+          </div>
+        </div>
+        
+        <div className="flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-[#b08b2e] text-white px-4 py-2 rounded font-medium hover:bg-[#a07a1e] transition disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save Contact Section"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

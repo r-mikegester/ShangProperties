@@ -1,264 +1,877 @@
-import React, { useEffect, useState } from "react";
-import { db } from "../../firebase/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import { put } from '@vercel/blob';
+import { Icon } from "@iconify/react";
 
 interface FooterContent {
   logoUrl: string;
+  kuokGroupLogoUrl: string;
+  corSealUrl: string;
   address: string;
   copyright: string;
   termsUrl: string;
   privacyUrl: string;
-  facebook: string;
-  instagram: string;
-  viber: string;
-  whatsapp: string;
-  telegram: string;
   email: string;
   links: { label: string; url: string }[];
+  socialLinks: { label: string; url: string; icon: string }[];
+  enabled: boolean;
 }
 
-const FooterEditor: React.FC = () => {
-  const [footer, setFooter] = useState<FooterContent>({
-    logoUrl: "",
-    address: "",
-    copyright: "",
-    termsUrl: "",
-    privacyUrl: "",
-    facebook: "",
-    instagram: "",
-    viber: "",
-    whatsapp: "",
-    telegram: "",
-    email: "",
-    links: [],
-  });
-  const [loading, setLoading] = useState(true);
+interface SectionEditorProps<T> {
+  initialData: T;
+  onSave: (data: T) => Promise<void>;
+}
+
+const FooterEditor: React.FC<SectionEditorProps<FooterContent>> = ({ initialData, onSave }) => {
+  const [data, setData] = useState(initialData);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [logoFilename, setLogoFilename] = useState<string>("");
+  const [kuokGroupLogoFilename, setKuokGroupLogoFilename] = useState<string>("");
+  const [corSealFilename, setCorSealFilename] = useState<string>("");
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  // Add state for new social link
+  const [newSocialLink, setNewSocialLink] = useState({ label: '', url: '', icon: '' });
+
+  // Default base URL for images
+  const DEFAULT_BASE_URL = "https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/";
 
   useEffect(() => {
-    const fetchFooter = async () => {
-      setLoading(true);
-      setError(null);
+    // Initialize socialLinks if not present
+    if (!initialData.socialLinks || initialData.socialLinks.length === 0) {
+      setData({
+        ...initialData,
+        socialLinks: [
+          { label: 'Facebook', url: '', icon: 'streamline-flex:facebook-logo-1-remix' },
+          { label: 'Instagram', url: '', icon: 'fa6-brands:instagram' },
+          { label: 'Viber', url: '', icon: 'basil:viber-outline' },
+          { label: 'WhatsApp', url: '', icon: 'fa6-brands:whatsapp' },
+          { label: 'Telegram', url: '', icon: 'gravity-ui:logo-telegram' },
+          { label: 'Email', url: '', icon: 'cib:mail-ru' },
+        ]
+      });
+    } else {
+      setData(initialData);
+    }
+
+    // Extract filename from the full URL if it exists for main logo
+    if (initialData.logoUrl) {
       try {
-        const docRef = doc(db, "homepage_content", "footer");
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          setFooter(snap.data() as FooterContent);
+        const url = new URL(initialData.logoUrl);
+        const pathParts = url.pathname.split('/');
+        if (pathParts.length > 0) {
+          setLogoFilename(pathParts[pathParts.length - 1]);
         }
-      } catch (err: any) {
-        setError("Failed to load footer content");
-      } finally {
-        setLoading(false);
+      } catch (e) {
+        // If it's not a valid URL, treat it as a filename
+        setLogoFilename(initialData.logoUrl);
       }
-    };
-    fetchFooter();
-  }, []);
+    }
+
+    // Extract filename for Kuok Group logo
+    if (initialData.kuokGroupLogoUrl) {
+      try {
+        const url = new URL(initialData.kuokGroupLogoUrl);
+        const pathParts = url.pathname.split('/');
+        if (pathParts.length > 0) {
+          setKuokGroupLogoFilename(pathParts[pathParts.length - 1]);
+        }
+      } catch (e) {
+        setKuokGroupLogoFilename(initialData.kuokGroupLogoUrl);
+      }
+    }
+
+    // Extract filename for COR seal
+    if (initialData.corSealUrl) {
+      try {
+        const url = new URL(initialData.corSealUrl);
+        const pathParts = url.pathname.split('/');
+        if (pathParts.length > 0) {
+          setCorSealFilename(pathParts[pathParts.length - 1]);
+        }
+      } catch (e) {
+        setCorSealFilename(initialData.corSealUrl);
+      }
+    }
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFooter({ ...footer, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleLinkChange = (idx: number, field: "label" | "url", value: string) => {
-    setFooter((prev) => {
+    setData(prev => {
       const links = [...prev.links];
       links[idx] = { ...links[idx], [field]: value };
       return { ...prev, links };
     });
   };
 
+  const handleSocialLinkChange = (index: number, field: keyof { label: string; url: string; icon: string }, value: string) => {
+    setData(prev => {
+      const socialLinks = [...prev.socialLinks];
+      socialLinks[index] = { ...socialLinks[index], [field]: value };
+      return { ...prev, socialLinks };
+    });
+  };
+
+  // Handle logo filename change
+  const handleLogoFilenameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLogoFilename(value);
+    setData(prev => ({ ...prev, logoUrl: value }));
+  };
+
+  // Handle Kuok Group logo filename change
+  const handleKuokGroupLogoFilenameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setKuokGroupLogoFilename(value);
+    setData(prev => ({ ...prev, kuokGroupLogoUrl: value }));
+  };
+
+  // Handle COR seal filename change
+  const handleCorSealFilenameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCorSealFilename(value);
+    setData(prev => ({ ...prev, corSealUrl: value }));
+  };
+
+  // Upload image to Vercel Blob and return URL
+  const uploadToVercelBlob = async (file: File): Promise<string> => {
+    console.log("Starting upload for file:", file.name, file.type, file.size);
+
+    // Check if we have the required token
+    const blobToken = import.meta.env.VITE_BLOB_READ_WRITE_TOKEN;
+    console.log("Blob token:", blobToken ? "Available" : "Missing");
+
+    if (!blobToken) {
+      const error = new Error("Vercel Blob token is not configured. Please set VITE_BLOB_READ_WRITE_TOKEN in your environment variables.");
+      toast.error(error.message);
+      throw error;
+    }
+
+    try {
+      console.log("Using Vercel Blob client to upload file...");
+
+      // Use the official Vercel Blob client
+      const blob = await put(file.name, file, {
+        access: 'public',
+        token: blobToken,
+      });
+
+      console.log("Upload successful, URL:", blob.url);
+      return blob.url;
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Upload failed: " + (error as Error).message);
+      throw error;
+    }
+  };
+
+  // Handle logo upload
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const toastId = toast.info(`Uploading ${file.name}...`, {
+      progress: 0,
+      autoClose: false,
+      closeOnClick: false,
+      pauseOnHover: false,
+      draggable: false,
+    });
+
+    try {
+      const url = await uploadToVercelBlob(file);
+
+      toast.update(toastId, {
+        render: "Upload complete!",
+        type: "success",
+        autoClose: 2000,
+        progress: undefined,
+      });
+
+      // Extract and set filename from the returned URL
+      try {
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/');
+        if (pathParts.length > 0) {
+          const fileName = pathParts[pathParts.length - 1];
+          setLogoFilename(fileName);
+          setData(prev => ({ ...prev, logoUrl: fileName }));
+        }
+      } catch (e) {
+        // Handle error if URL parsing fails
+        console.error("Error parsing URL:", e);
+      }
+    } catch (error) {
+      toast.update(toastId, {
+        render: `Upload failed: ${(error as Error).message}`,
+        type: "error",
+        autoClose: 5000,
+        progress: undefined,
+      });
+    }
+
+    // Reset file input
+    e.target.value = '';
+  };
+
+  // Handle Kuok Group logo upload
+  const handleKuokGroupLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const toastId = toast.info(`Uploading ${file.name}...`, {
+      progress: 0,
+      autoClose: false,
+      closeOnClick: false,
+      pauseOnHover: false,
+      draggable: false,
+    });
+
+    try {
+      const url = await uploadToVercelBlob(file);
+
+      toast.update(toastId, {
+        render: "Upload complete!",
+        type: "success",
+        autoClose: 2000,
+        progress: undefined,
+      });
+
+      // Extract and set filename from the returned URL
+      try {
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/');
+        if (pathParts.length > 0) {
+          const fileName = pathParts[pathParts.length - 1];
+          setKuokGroupLogoFilename(fileName);
+          setData(prev => ({ ...prev, kuokGroupLogoUrl: fileName }));
+        }
+      } catch (e) {
+        // Handle error if URL parsing fails
+        console.error("Error parsing URL:", e);
+      }
+    } catch (error) {
+      toast.update(toastId, {
+        render: `Upload failed: ${(error as Error).message}`,
+        type: "error",
+        autoClose: 5000,
+        progress: undefined,
+      });
+    }
+
+    // Reset file input
+    e.target.value = '';
+  };
+
+  // Handle COR seal upload
+  const handleCorSealUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const toastId = toast.info(`Uploading ${file.name}...`, {
+      progress: 0,
+      autoClose: false,
+      closeOnClick: false,
+      pauseOnHover: false,
+      draggable: false,
+    });
+
+    try {
+      const url = await uploadToVercelBlob(file);
+
+      toast.update(toastId, {
+        render: "Upload complete!",
+        type: "success",
+        autoClose: 2000,
+        progress: undefined,
+      });
+
+      // Extract and set filename from the returned URL
+      try {
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/');
+        if (pathParts.length > 0) {
+          const fileName = pathParts[pathParts.length - 1];
+          setCorSealFilename(fileName);
+          setData(prev => ({ ...prev, corSealUrl: fileName }));
+        }
+      } catch (e) {
+        // Handle error if URL parsing fails
+        console.error("Error parsing URL:", e);
+      }
+    } catch (error) {
+      toast.update(toastId, {
+        render: `Upload failed: ${(error as Error).message}`,
+        type: "error",
+        autoClose: 5000,
+        progress: undefined,
+      });
+    }
+
+    // Reset file input
+    e.target.value = '';
+  };
+
   const addLink = () => {
-    setFooter((prev) => ({ ...prev, links: [...prev.links, { label: "", url: "" }] }));
+    setData(prev => ({ ...prev, links: [...prev.links, { label: "", url: "" }] }));
   };
 
   const removeLink = (idx: number) => {
-    setFooter((prev) => ({ ...prev, links: prev.links.filter((_, i) => i !== idx) }));
+    setData(prev => ({ ...prev, links: prev.links.filter((_, i) => i !== idx) }));
+  };
+
+  const addSocialLink = () => {
+    if (newSocialLink.label && newSocialLink.icon) {
+      setData(prev => ({
+        ...prev,
+        socialLinks: [...prev.socialLinks, { ...newSocialLink }]
+      }));
+      setNewSocialLink({ label: '', url: '', icon: '' });
+    } else {
+      toast.error("Please provide both label and icon for the social link");
+    }
+  };
+
+  const removeSocialLink = (index: number) => {
+    setData(prev => {
+      const socialLinks = [...prev.socialLinks];
+      socialLinks.splice(index, 1);
+      return { ...prev, socialLinks };
+    });
   };
 
   const handleSave = async () => {
     setSaving(true);
-    setError(null);
-    setSuccess(false);
     try {
-      const docRef = doc(db, "homepage_content", "footer");
-      await setDoc(docRef, footer, { merge: true });
-      setSuccess(true);
-    } catch (err: any) {
-      setError("Failed to save footer content");
+      await onSave(data);
+      toast.success("Footer section saved successfully!");
+    } catch (error) {
+      toast.error("Failed to save footer section: " + (error as Error).message);
     } finally {
       setSaving(false);
     }
   };
 
+  // Construct full URL for preview
+  const getFullLogoUrl = () => {
+    if (!data.logoUrl) return "";
+    // If it's already a full URL, return as is
+    try {
+      new URL(data.logoUrl);
+      return data.logoUrl;
+    } catch {
+      // If it's not a valid URL, treat as filename and prepend base URL
+      return `${DEFAULT_BASE_URL}${data.logoUrl}`;
+    }
+  };
+
+  // Construct full URL for Kuok Group logo
+  const getFullKuokGroupLogoUrl = () => {
+    if (!data.kuokGroupLogoUrl) return "";
+    try {
+      new URL(data.kuokGroupLogoUrl);
+      return data.kuokGroupLogoUrl;
+    } catch {
+      return `${DEFAULT_BASE_URL}${data.kuokGroupLogoUrl}`;
+    }
+  };
+
+  // Construct full URL for COR seal
+  const getFullCorSealUrl = () => {
+    if (!data.corSealUrl) return "";
+    try {
+      new URL(data.corSealUrl);
+      return data.corSealUrl;
+    } catch {
+      return `${DEFAULT_BASE_URL}${data.corSealUrl}`;
+    }
+  };
+
   return (
-    <div>
-      {loading ? (
-        <div className="text-gray-500">Loading...</div>
-      ) : (
-        <form className="space-y-4" onSubmit={e => { e.preventDefault(); handleSave(); }}>
-          <div>
-            <label className="block font-semibold mb-1">Footer Logo URL</label>
-            <input
-              type="text"
-              name="logoUrl"
-              value={footer.logoUrl}
-              onChange={handleChange}
-              className="w-full border rounded px-2 py-1"
-              placeholder="Logo URL"
-            />
+    <div className="flex flex-col gap-6">
+      {/* Live Preview - on top for mobile, on right for desktop */}
+      <div className="border border-gray-200 rounded-lg w-full lg:w-full bg-gray-50 lg:order-1">
+        {/* <h3 className="font-semibold text-lg text-[#b08b2e] mb-3 p-4">Live Preview</h3> */}
+
+        <div className="overflow-auto">
+          {/* Exact copy of Footer.tsx with dynamic data */}
+          <footer className="w-full bg-[#686058] text-white">
+            <div className="container px-4 py-8 sm:p-6 pt-10 mx-auto">
+              <div className="flex flex-col lg:flex-row items-start justify-center gap-10 text-center lg:text-left">
+                <div className="flex flex-col items-center w-full lg:w-1/5 px-2 sm:px-6 mb-8 lg:mb-0">
+                  <a className="flex flex-col items-center text-xs space-y-3 text-white focus:outline-hidden focus:opacity-80" href="#" aria-label="Brand">
+                    {data.logoUrl ? (
+                      <img src={getFullLogoUrl()} className="w-32 sm:w-40 mx-auto" alt="Footer Logo" />
+                    ) : (
+                      <div className="border-2 border-dashed border-[#b08b2e] text-white bg-[#b08b2e]/30] text-white bg-[#b08b2e]/30 rounded-xl w-32 h-12 flex items-center justify-center text-gray-500">
+                        Logo
+                      </div>
+                    )}
+                    <pre className="text-center whitespace-pre-wrap text-white">
+                      {data.address || `Shangri-La Plaza, Shang Central,
+EDSA corner Shaw Boulevard,
+Mandaluyong City,
+Metro Manila 1550,
+Philippines`}
+                    </pre>
+                  </a>
+                  <div className="mt-3 flex flex-col items-center">
+                    {/* Kuok Group Logo */}
+                    {data.kuokGroupLogoUrl ? (
+                      <img src={getFullKuokGroupLogoUrl()} className="w-32 h-full mb-2 object-contain" alt="Kuok Group Logo" />
+                    ) : (
+                      <div className=" border-2 border-dashed border-[#b08b2e] text-white bg-[#b08b2e]/30 rounded-xl w-32 h-12 mb-2" />
+                    )}
+                    {/* <span className="text-xs text-gray-300">Kuok Group Logo</span> */}
+                  </div>
+                </div>
+                <div className="flex flex-col md:flex-row items-start justify-around w-full lg:w-4/5 gap-8">
+                  <div className="flex flex-col max-w-96 w-full text-center items-center">
+                    <h3 className="text-white uppercase font-semibold">New Developments</h3>
+                    {data.links && data.links.length > 0 ? (
+                      data.links.map((link, idx) => (
+                        <a
+                          key={idx}
+                          href={link.url}
+                          className="block mt-2 text-sm text-white hover:underline"
+                        >
+                          {link.label}
+                        </a>
+                      ))
+                    ) : (
+                      <>
+                        <a href="/ShangSummit" className="block mt-2 text-sm text-white hover:underline">Shang Summit</a>
+                        <a href="/Haraya" className="block mt-2 text-sm text-white hover:underline">Haraya Residences</a>
+                        <a href="/Aurelia" className="block mt-2 text-sm text-white hover:underline">Aurelia Residences</a>
+                        <a href="/Laya" className="block mt-2 text-sm text-white hover:underline">Laya Residences</a>
+                        <a href="/WackWack" className="block mt-2 text-sm text-white hover:underline">Shang Residences at Wack Wack</a>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-center justify-center w-full">
+                    <h3 className="text-white text-center uppercase font-semibold">Connect with me</h3>
+                    <div className="mt-3 w-full md:max-w-lg grid grid-cols-6 px-6 md:grid-cols-2 gap-4 justify-center items-center">
+                      {data.socialLinks && data.socialLinks.map((social, idx) => (
+                        social.url ? (
+                          <a 
+                            key={idx} 
+                            href={social.label === 'Email' ? `mailto:${social.url}` : social.url}
+                            className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]"
+                          >
+                            <Icon icon={social.icon} className="size-8" />
+                            <h1 className="hidden md:flex">{social.label}</h1>
+                          </a>
+                        ) : (
+                          <div 
+                            key={idx}
+                            className="flex justify-center md:justify-start items-center text-white hover:text-[#b08b2e] space-x-0 md:space-x-3 focus:outline-hidden focus:text-[#b08b2e]"
+                          >
+                            <Icon icon={social.icon} className="size-8" />
+                            <h1 className="hidden md:flex">{social.label}</h1>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center md:max-w-40 justify-center w-full">
+                    {/* COR Seal */}
+                    {data.corSealUrl ? (
+                      <img src={getFullCorSealUrl()} className="max-w-[100px] sm:max-w-40 w-40 h-full mx-auto object-contain" alt="COR Seal" />
+                    ) : (
+                      <div className="bg-gray-200 border-2 border-dashed rounded-xl max-w-[100px] sm:max-w-40 w-40 h-20 mx-auto" />
+                    )}
+                    {/* <span className="text-xs text-gray-300 mt-1">COR Seal</span> */}
+                  </div>
+                </div>
+              </div>
+              <div className="pt-5 mt-5 border-t border-white">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 text-center">
+                  <div className="flex flex-wrap items-center gap-3 justify-center w-full md:w-auto">
+                    <div className="space-x-4 text-sm">
+                      <a className="inline-flex gap-x-2 text-gray-300 hover:text-white focus:outline-hidden focus:text-white" href={data.termsUrl || "#"}>Terms</a>
+                      <a className="inline-flex gap-x-2 text-gray-300 hover:text-white focus:outline-hidden focus:text-white" href={data.privacyUrl || "#"}>Privacy</a>
+                      <button
+                        className="inline-flex gap-x-2 text-gray-300 hover:text-[#b08b2e] focus:outline-hidden focus:text-[#b08b2e] castoro-titling-regular bg-transparent border-none p-0 m-0 cursor-pointer"
+                        type="button"
+                      >
+                        Admin
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap justify-center items-center gap-3 w-full md:w-auto">
+                    <div>
+                      <div className="text-sm text-gray-300 hover:text-white focus:outline-hidden focus:text-white">
+                        <p>© {data.copyright || new Date().getFullYear()} Shang Properties, Inc. All Rights Reserved.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </div>
+
+      {/* Edit Form - on bottom for mobile, on left for desktop */}
+      <div className="space-y-4 w-full lg:w-full lg:order-2">
+        {/* Logo Uploads in a Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Main Footer Logo */}
+          <div className="space-y-2">
+            <label className="block font-medium mb-1">Footer Logo</label>
+            <div 
+              className="border-2 border-dashed border-[#b08b2e] text-white bg-[#b08b2e]/30 rounded-lg p-4 flex flex-col items-center justify-center relative group"
+            >
+              {data.logoUrl ? (
+                <>
+                  <img 
+                    src={getFullLogoUrl()} 
+                    alt="Logo Preview" 
+                    className="h-32 w-full object-contain rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setData(prev => ({ ...prev, logoUrl: "" }));
+                      setLogoFilename("");
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
+                    </svg>
+                  </button>
+                </>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="mt-2">Footer Logo</p>
+                  <p className="text-sm">No file selected</p>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
+            <div>
+              <input
+                type="text"
+                value={logoFilename}
+                onChange={handleLogoFilenameChange}
+                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                placeholder="logo.webp"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter just the filename</p>
+            </div>
           </div>
-          <div>
-            <label className="block font-semibold mb-1">Address</label>
-            <textarea
-              name="address"
-              value={footer.address}
-              onChange={handleChange}
-              className="w-full border rounded px-2 py-1 min-h-[60px]"
-              placeholder="Address"
-            />
+          
+          {/* Kuok Group Logo */}
+          <div className="space-y-2">
+            <label className="block font-medium mb-1">Kuok Group Logo</label>
+            <div 
+              className="border-2 border-dashed border-[#b08b2e] text-white bg-[#b08b2e]/30 rounded-lg p-4 flex flex-col items-center justify-center relative group"
+            >
+              {data.kuokGroupLogoUrl ? (
+                <>
+                  <img 
+                    src={getFullKuokGroupLogoUrl()} 
+                    alt="Kuok Group Logo Preview" 
+                    className="h-32 w-full object-contain rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setData(prev => ({ ...prev, kuokGroupLogoUrl: "" }));
+                      setKuokGroupLogoFilename("");
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
+                    </svg>
+                  </button>
+                </>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="mt-2">Kuok Group Logo</p>
+                  <p className="text-sm">No file selected</p>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleKuokGroupLogoUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
+            <div>
+              <input
+                type="text"
+                value={kuokGroupLogoFilename}
+                onChange={handleKuokGroupLogoFilenameChange}
+                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                placeholder="kuok-group-logo.webp"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter just the filename</p>
+            </div>
           </div>
+          
+          {/* COR Seal */}
+          <div className="space-y-2">
+            <label className="block font-medium mb-1">COR Seal</label>
+            <div 
+              className="border-2 border-dashed border-[#b08b2e] text-white bg-[#b08b2e]/30 rounded-lg p-4 flex flex-col items-center justify-center relative group"
+            >
+              {data.corSealUrl ? (
+                <>
+                  <img 
+                    src={getFullCorSealUrl()} 
+                    alt="COR Seal Preview" 
+                    className="h-32 w-full object-contain rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setData(prev => ({ ...prev, corSealUrl: "" }));
+                      setCorSealFilename("");
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
+                    </svg>
+                  </button>
+                </>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="mt-2">COR Seal</p>
+                  <p className="text-sm">No file selected</p>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleCorSealUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
+            <div>
+              <input
+                type="text"
+                value={corSealFilename}
+                onChange={handleCorSealFilenameChange}
+                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                placeholder="cor-seal.webp"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter just the filename</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block font-medium mb-1">Address</label>
+          <textarea
+            name="address"
+            value={data.address}
+            onChange={handleChange}
+            rows={2}
+            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+            placeholder="Company address..."
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block font-semibold mb-1">Copyright</label>
+            <label className="block font-medium mb-1">Copyright Text</label>
             <input
               type="text"
               name="copyright"
-              value={footer.copyright}
+              value={data.copyright}
               onChange={handleChange}
-              className="w-full border rounded px-2 py-1"
-              placeholder="Copyright text"
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="2025 Company Name"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block font-semibold mb-1">Terms URL</label>
-              <input
-                type="text"
-                name="termsUrl"
-                value={footer.termsUrl}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="Terms URL"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Privacy URL</label>
-              <input
-                type="text"
-                name="privacyUrl"
-                value={footer.privacyUrl}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="Privacy URL"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block font-semibold mb-1">Facebook</label>
-              <input
-                type="text"
-                name="facebook"
-                value={footer.facebook}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="Facebook URL"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Instagram</label>
-              <input
-                type="text"
-                name="instagram"
-                value={footer.instagram}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="Instagram URL"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Viber</label>
-              <input
-                type="text"
-                name="viber"
-                value={footer.viber}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="Viber Link or Number"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">WhatsApp</label>
-              <input
-                type="text"
-                name="whatsapp"
-                value={footer.whatsapp}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="WhatsApp Link or Number"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Telegram</label>
-              <input
-                type="text"
-                name="telegram"
-                value={footer.telegram}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="Telegram Link or Number"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={footer.email}
-                onChange={handleChange}
-                className="w-full border rounded px-2 py-1"
-                placeholder="Email"
-              />
-            </div>
-          </div>
+
           <div>
-            <label className="block font-semibold mb-1">Footer Links</label>
-            {footer.links.map((link, idx) => (
-              <div key={idx} className="flex gap-2 mb-2">
+            <label className="block font-medium mb-1">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={data.email || ''}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="contact@example.com"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-medium mb-1">Terms URL</label>
+            <input
+              type="text"
+              name="termsUrl"
+              value={data.termsUrl}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="/terms"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium mb-1">Privacy URL</label>
+            <input
+              type="text"
+              name="privacyUrl"
+              value={data.privacyUrl}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="/privacy"
+            />
+          </div>
+        </div>
+
+        {/* Social Media Links Section */}
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block font-medium">Social Media Links</label>
+            <button
+              type="button"
+              className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded"
+              onClick={addSocialLink}
+            >
+              Add Social Link
+            </button>
+          </div>
+
+          {/* Add new social link form */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+            <input
+              type="text"
+              value={newSocialLink.label}
+              onChange={e => setNewSocialLink({...newSocialLink, label: e.target.value})}
+              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="Label (e.g. Facebook)"
+            />
+            <input
+              type="text"
+              value={newSocialLink.icon}
+              onChange={e => setNewSocialLink({...newSocialLink, icon: e.target.value})}
+              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="Icon (e.g. fa6-brands:facebook)"
+            />
+            <input
+              type="text"
+              value={newSocialLink.url}
+              onChange={e => setNewSocialLink({...newSocialLink, url: e.target.value})}
+              className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+              placeholder="URL"
+            />
+          </div>
+
+          {/* Existing social links */}
+          <div className="space-y-2">
+            {data.socialLinks && data.socialLinks.map((social, idx) => (
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
+                <div className="flex items-center space-x-2">
+                  <Icon icon={social.icon} className="size-6" />
+                  <span>{social.label}</span>
+                </div>
+                <input
+                  type="text"
+                  value={social.icon}
+                  onChange={e => handleSocialLinkChange(idx, 'icon', e.target.value)}
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                  placeholder="Icon name"
+                />
+                <input
+                  type="text"
+                  value={social.url}
+                  onChange={e => handleSocialLinkChange(idx, 'url', e.target.value)}
+                  className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                  placeholder="URL"
+                />
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                    onClick={() => removeSocialLink(idx)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer Links Section */}
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block font-medium">Footer Links</label>
+            <button
+              type="button"
+              className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded"
+              onClick={addLink}
+            >
+              Add Link
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {data.links.map((link, idx) => (
+              <div key={idx} className="flex flex-col md:flex-row gap-2">
                 <input
                   type="text"
                   value={link.label}
                   onChange={e => handleLinkChange(idx, "label", e.target.value)}
-                  className="border rounded px-2 py-1 flex-1"
-                  placeholder="Label"
+                  className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                  placeholder="Link Label"
                 />
                 <input
                   type="text"
                   value={link.url}
                   onChange={e => handleLinkChange(idx, "url", e.target.value)}
-                  className="border rounded px-2 py-1 flex-1"
-                  placeholder="URL"
+                  className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#b08b2e] focus:border-[#b08b2e]"
+                  placeholder="Link URL"
                 />
-                <button type="button" className="text-red-500 px-2" onClick={() => removeLink(idx)}>
+                <button
+                  type="button"
+                  className="text-red-500 px-2"
+                  onClick={() => removeLink(idx)}
+                >
                   Remove
                 </button>
               </div>
             ))}
-            <button type="button" className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300" onClick={addLink}>
-              Add Link
-            </button>
           </div>
-          {error && <div className="text-red-500">{error}</div>}
-          {success && <div className="text-green-600">Saved!</div>}
+        </div>
+
+        <div className="flex justify-end">
           <button
-            type="submit"
-            className="bg-[#b08b2e] text-white px-4 py-2 rounded font-semibold hover:bg-[#a07a1e] transition"
+            onClick={handleSave}
             disabled={saving}
+            className="bg-[#b08b2e] text-white px-4 py-2 rounded font-medium hover:bg-[#a07a1e] transition disabled:opacity-50"
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? "Saving..." : "Save Footer Section"}
           </button>
-        </form>
-      )}
+        </div>
+      </div>
     </div>
   );
 };

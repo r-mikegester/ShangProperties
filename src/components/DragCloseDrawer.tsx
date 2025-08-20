@@ -38,21 +38,34 @@ interface Props {
     children?: ReactNode;
     onClose?: () => void;
     disableClose?: boolean;
-    drawerHeight?: string; // Add this line
+    drawerHeight?: string; // Height of the drawer when open
 }
 
-const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = false, drawerHeight = '75vh' }: Props) => {
+const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = false, drawerHeight = '90vh' }: Props) => {
     const [scope, animate] = useAnimate();
     const [drawerRef, { height }] = useMeasure();
 
     // Resizable logic (smooth drag, snap on release)
-    const [percent, setPercent] = useState(75); // Default to 75%
-    const snapPoints = [25, 50, 75, 100];
+    const [percent, setPercent] = useState(90); // Default to 90%
+    const snapPoints = [25, 50, 75, 90];
     const [dragging, setDragging] = useState(false);
     const startYRef = React.useRef<number | null>(null);
     const startPercentRef = React.useRef<number>(percent);
     const [dragPercent, setDragPercent] = useState<number | null>(null);
     const percentMotion = useMotionValue(percent);
+
+    // Calculate percent based on drawerHeight
+    const calculatePercentFromHeight = React.useCallback(() => {
+        const heightValue = parseInt(drawerHeight);
+        if (!isNaN(heightValue)) {
+            return Math.min(100, Math.max(25, heightValue));
+        }
+        return 90;
+    }, [drawerHeight]);
+
+    React.useEffect(() => {
+        setPercent(calculatePercentFromHeight());
+    }, [drawerHeight, calculatePercentFromHeight]);
 
     // Unified drag/resize handle logic
     const handleResizeStart = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -164,7 +177,11 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
                             ease: "easeInOut",
                         }}
                         className={`absolute bottom-0 w-full overflow-hidden rounded-t-3xl bg-white shadow-2xl`}
-                        style={{ y, height: `calc(${percentMotion.get()}svh)`, transition: dragging ? 'none' : 'height 0.25s cubic-bezier(0.4,0,0.2,1)' }}
+                        style={{ 
+                            y, 
+                            height: drawerHeight,
+                            transition: dragging ? 'none' : 'height 0.25s cubic-bezier(0.4,0,0.2,1)' 
+                        }}
                         drag="y"
                         dragControls={controls}
                         onDragEnd={handleDragEnd}

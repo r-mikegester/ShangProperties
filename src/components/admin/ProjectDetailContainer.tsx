@@ -277,7 +277,7 @@ const ProjectDetailContainer: React.FC<ProjectDetailContainerProps> = ({
                   <div className="flex items-start space-x-3 w-full">
                     <div className="flex flex-col relative">
                       <img
-                        src={project.image || "https://via.placeholder.com/120x80?text=No+Image"}
+                        src={project.image || "https://placehold.co/120x80.png"}
                         alt={project.title || "Project image"}
                         className="md:min-w-32 max-w-full md:min-h-44 h-44 w-32 max-h-full object-cover rounded-lg border" 
                       />
