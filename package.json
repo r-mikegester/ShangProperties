@@ -8,7 +8,10 @@
     "dev:all": "concurrently \"npm run dev --prefix backend\" \"npm run dev\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "upload:assets": "node upload-assets.js",
+    "list:blobs": "node upload-assets.js --list",
+    "delete:blobs": "node upload-assets.js --delete-all"
   },
   "dependencies": {
     "@iconify/react": "^6.0.0",
