@@ -2,37 +2,33 @@ import React, { useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
+import { ROUTE_PATHS } from "../../router/routePaths";
 
 const sidebarLinks = [
   {
     title: "Dashboard",
     icon: "solar:chat-square-2-broken",
-    to: "/dashboard",
-    isLogout: false,
+    path: ROUTE_PATHS.DASHBOARD,
   },
   {
     title: "Inquiries",
     icon: "solar:letter-broken",
-    to: "/dashboard/inquiries",
-    isLogout: false,
+    path: ROUTE_PATHS.INQUIRIES,
   },
   {
-    title: "Project Management",
+    title: "Projects",
     icon: "solar:inbox-archive-broken",
-    to: "/dashboard/projects",
-    isLogout: false,
+    path: ROUTE_PATHS.PROJECTS,
   },
   {
     title: "Page Management",
     icon: "solar:feed-broken",
-    to: "/dashboard/page-management",
-    isLogout: false,
+    path: ROUTE_PATHS.PAGE_MANAGEMENT,
   },
   {
-    title: "Log out",
-    icon: "mdi:logout",
-    to: "#logout",
-    isLogout: true,
+    title: "Settings",
+    icon: "solar:settings-broken",
+    path: ROUTE_PATHS.SETTINGS,
   },
 ];
 
@@ -96,20 +92,24 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
           className="absolute z-[2999] top-2 p-1 rounded-lg bg-white border-l-none border border-slate-300 shadow transition-colors hover:bg-slate-100"
           style={{
             left: open ? 225 - 15 : 60 - 15, // 18px to overlap the rim
-            transition: 'left 0.3s',
+            // transition: 'left 0.3s',
           }}
           aria-label="Toggle sidebar"
         >
-          <Icon icon="solar:square-double-alt-arrow-right-broken" className={open ? "  rotate-180 transition-transform" : "transition-transform"} />
+          {open ? (
+            <Icon icon="solar:square-double-alt-arrow-left-broken" className="text-lg" />
+          ) : (
+            <Icon icon="solar:square-double-alt-arrow-right-broken" className="text-lg" />
+          )}
         </button>
       </div>
       <div className="space-y-1 flex-1 flex flex-col justify-between">
         <div className="flex flex-col gap-1">
-          {sidebarLinks.slice(0, -1).map(({ icon, title, to }) => (
+          {sidebarLinks.slice(0, -1).map(({ icon, title, path }) => (
             <SmoothHoverMenuItem key={title}>
               <NavLink
-                to={to}
-                end={to === "/dashboard"}
+                to={path}
+                end={path === "/dashboard"}
                 className={({ isActive }) =>
                   open
                     ? `relative flex h-10 w-full items-center rounded-md px-2 transition-colors ${
@@ -144,17 +144,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         </div>
         <div className="flex flex-col gap-1 mb-2">
           <SmoothHoverMenuItem>
-            <a
-              href="#logout"
-              onClick={handleLogout}
+            <NavLink
+              to={ROUTE_PATHS.SETTINGS}
               className={
                 open
-                  ? "relative flex h-10 w-full items-center rounded-md px-2 transition-colors bg-red-200 text-red-600"
-                  : "relative flex items-center justify-center size-10 mx-auto rounded-lg transition-colors text-red-600 bg-red-200"
+                  ? "relative flex h-10 w-full items-center rounded-md px-2 transition-colors text-[#b08b2e]"
+                  : "relative flex items-center justify-center size-10 mx-auto rounded-lg transition-colors text-[#b08b2e]"
               }
             >
               <motion.div layout className={`grid h-full ${open ? "w-10" : "w-full"} place-content-center text-lg`}>
-                <Icon icon="solar:logout-3-broken" width={20} height={20} />
+                <Icon icon="solar:settings-broken" width={20} height={20} />
               </motion.div>
               {open && (
                 <motion.span
@@ -164,10 +163,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                   transition={{ delay: 0.125 }}
                   className="text-xs font-medium"
                 >
-                  Log out
+                  Settings
                 </motion.span>
               )}
-            </a>
+            </NavLink>
           </SmoothHoverMenuItem>
         </div>
       </div>
@@ -202,7 +201,7 @@ const Logo = () => {
       layout
       className="grid size-10 shrink-0 place-content-center rounded-lg bg-[#b08b2e]"
     >
-      <img src="https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/VeneziaEspiritu.jpg" alt="Logo" className="h-8 w-8 object-cover rounded-md" />
+      <img src="https://6ovgprfdguxo1bkn.public.blob.vercel-storage.com/VeneziaEspiritu.jpg" alt="Logo" className="h-8 w-8 object-cover rounded-md" />
     </motion.div>
   );
 };
