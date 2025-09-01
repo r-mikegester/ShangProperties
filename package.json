@@ -1,7 +1,7 @@
 {
   "name": "shangproperties",
   "private": true,
-  "version": "2.0.1",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,13 +9,13 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "upload:assets": "node upload-assets.js",
-    "list:blobs": "node upload-assets.js --list",
-    "delete:blobs": "node upload-assets.js --delete-all"
+    "assets:upload": "node upload-assets.cjs",
+    "assets:clean": "node clean-assets.cjs",
+    "assets:recover": "node recover-assets.cjs"
   },
   "dependencies": {
     "@iconify/react": "^6.0.0",
-    "@intentui/icons": "^1.11.0",
+    "@intentui/icons": "^1.1.1",
     "@radix-ui/react-select": "^2.2.5",
     "@sendgrid/mail": "^8.1.5",
     "@tailwindcss/vite": "^4.1.1",
