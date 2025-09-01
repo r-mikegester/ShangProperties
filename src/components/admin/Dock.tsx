@@ -7,25 +7,25 @@ const sidebarLinks = [
   {
     title: "Dashboard",
     icon: "solar:chat-square-2-broken",
-    to: "/dashboard",
+    to: "/Admin/Dashboard",
     isLogout: false,
   },
   {
     title: "Inquiries",
     icon: "solar:letter-broken",
-    to: "/dashboard/inquiries",
+    to: "/Admin/Inquiries",
     isLogout: false,
   },
   {
     title: "Projects",
     icon: "solar:inbox-archive-broken",
-    to: "/dashboard/projects",
+    to: "/Admin/Projects",
     isLogout: false,
   },
   {
     title: "Pages",
     icon: "solar:feed-broken",
-    to: "/dashboard/page-management",
+    to: "/Admin/PageManagement",
     isLogout: false,
   },
   // {
@@ -66,7 +66,7 @@ const Dock: React.FC = () => {
           ) : (
             <NavLink
               to={to}
-              end={to === "/dashboard"}
+              end={to === "/Admin/Dashboard"}
               className={({ isActive }) =>
                 `flex flex-col items-center w-20 justify-center p-2 rounded-xl transition-colors ${
                   isActive ? "bg-white/50 text-[#68521c]" : "text-[#68521c]"
