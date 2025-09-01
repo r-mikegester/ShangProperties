@@ -1,4 +1,4 @@
-import React, { Dispatch, ReactNode, SetStateAction, useState } from "react";
+import React, { Dispatch, ReactNode, SetStateAction, useState, useCallback, useMemo } from "react";
 import useMeasure from "react-use-measure";
 import {
     useDragControls,
@@ -41,41 +41,60 @@ interface Props {
     drawerHeight?: string; // Height of the drawer when open
 }
 
-const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = false, drawerHeight = '90vh' }: Props) => {
+const DragCloseDrawer = ({
+    open,
+    setOpen,
+    children,
+    drawerHeight = "80vh",
+    onClose,
+}: {
+    open: boolean;
+    setOpen: Dispatch<SetStateAction<boolean>>;
+    children: ReactNode;
+    drawerHeight?: string;
+    onClose?: () => void;
+}) => {
     const [scope, animate] = useAnimate();
     const [drawerRef, { height }] = useMeasure();
-
-    // Resizable logic (smooth drag, snap on release)
-    const [percent, setPercent] = useState(90); // Default to 90%
-    const snapPoints = [25, 50, 75, 90];
+    const [percent, setPercent] = useState(0);
     const [dragging, setDragging] = useState(false);
-    const startYRef = React.useRef<number | null>(null);
-    const startPercentRef = React.useRef<number>(percent);
     const [dragPercent, setDragPercent] = useState<number | null>(null);
-    const percentMotion = useMotionValue(percent);
+    const startYRef = React.useRef<number | null>(null);
+    const startPercentRef = React.useRef<number>(0);
+    const percentMotion = useMotionValue(0);
+    const snapPoints = useMemo(() => [25, 50, 75, 100], []);
 
-    // Calculate percent based on drawerHeight
-    const calculatePercentFromHeight = React.useCallback(() => {
-        const heightValue = parseInt(drawerHeight);
-        if (!isNaN(heightValue)) {
-            return Math.min(100, Math.max(25, heightValue));
+    // Memoize calculations to prevent unnecessary re-renders
+    const calculatePercentFromHeight = useCallback(() => {
+        if (typeof drawerHeight === "string" && drawerHeight.endsWith("vh")) {
+            const vhPercent = parseFloat(drawerHeight);
+            return isNaN(vhPercent) ? 80 : vhPercent;
         }
-        return 90;
+
+        if (typeof drawerHeight === "string" && drawerHeight.endsWith("px")) {
+            const pxHeight = parseFloat(drawerHeight);
+            if (!isNaN(pxHeight) && pxHeight > 0) {
+                return Math.min(100, Math.round((pxHeight / window.innerHeight) * 100));
+            }
+        }
+
+        return 80;
     }, [drawerHeight]);
 
     React.useEffect(() => {
         setPercent(calculatePercentFromHeight());
-    }, [drawerHeight, calculatePercentFromHeight]);
+    }, [calculatePercentFromHeight]);
 
-    // Unified drag/resize handle logic
-    const handleResizeStart = (e: React.PointerEvent<HTMLButtonElement>) => {
+    // Unified drag/resize handle logic with optimized event handling
+    const handleResizeStart = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
         setDragging(true);
         startYRef.current = e.clientY;
         startPercentRef.current = percent;
         setDragPercent(percent);
         document.body.style.userSelect = 'none';
-    };
-    const handleResizeMove = (e: PointerEvent) => {
+    }, [percent]);
+
+    const handleResizeMove = useCallback((e: PointerEvent) => {
         if (!dragging || startYRef.current === null) return;
         const deltaY = startYRef.current - e.clientY;
         const vh = window.innerHeight;
@@ -83,19 +102,30 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
         newPercent = Math.max(25, Math.min(100, newPercent));
         setDragPercent(newPercent);
         percentMotion.set(newPercent);
-    };
-    const handleResizeEnd = () => {
+    }, [dragging, percentMotion]);
+
+    const handleResizeEnd = useCallback(() => {
         if (dragPercent !== null) {
             // Snap to nearest snapPoint
-            let closest = snapPoints.reduce((prev, curr) => Math.abs(curr - dragPercent) < Math.abs(prev - dragPercent) ? curr : prev);
-            setPercent(closest);
-            percentMotion.stop();
-            percentMotion.set(closest);
-            setTimeout(() => setDragPercent(null), 150); // allow animation to finish
+            let closest = snapPoints.reduce((prev, curr) => 
+                Math.abs(curr - dragPercent) < Math.abs(prev - dragPercent) ? curr : prev
+            );
+            
+            // If dragged down enough, close the drawer
+            if (dragPercent < 20) {
+                setOpen(false);
+                if (onClose) onClose();
+            } else {
+                setPercent(closest);
+                percentMotion.stop();
+                percentMotion.set(closest);
+                setTimeout(() => setDragPercent(null), 150); // allow animation to finish
+            }
         }
         setDragging(false);
         document.body.style.userSelect = '';
-    };
+    }, [dragPercent, snapPoints, setOpen, onClose, percentMotion]);
+
     React.useEffect(() => {
         if (!dragging) return;
         const move = (e: PointerEvent) => handleResizeMove(e);
@@ -106,7 +136,7 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
             window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', up);
         };
-    }, [dragging, dragPercent]);
+    }, [dragging, handleResizeMove, handleResizeEnd]);
 
     // Animate percentMotion to percent when not dragging
     React.useEffect(() => {
@@ -135,13 +165,8 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
     };
 
     const handleDragEnd = async () => {
-        if (disableClose) {
-            // Animate back to open position
-            await animate("#drawer", { y: 0 });
-        } else {
-            if (y.get() >= 100) {
-                handleClose();
-            }
+        if (y.get() >= 100) {
+            handleClose();
         }
     };
 
@@ -164,7 +189,7 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
                     ref={scope}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    onClick={disableClose ? undefined : handleClose}
+                    onClick={handleClose}
                     className="fixed inset-0 z-[3001] bg-black/40"
                 >
                     <motion.div
@@ -195,14 +220,14 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
                             bottom: 0.5,
                         }}
                     >
-                        <div className="sticky top-0 z-20 bg-white border-b border-gray-100 p-1 flex items-center justify-between min-h-[48px]">
+                        <div className="sticky top-0 z-20 bg-white p-1 flex items-center justify-between min-h-[28px]">
                             <div className="flex-1 flex items-center justify-center relative">
                                 <button
                                     onPointerDown={(e) => {
                                         controls.start(e);
                                         handleResizeStart(e);
                                     }}
-                                    className="h-9 w-full cursor-ns-resize touch-none rounded-3xl rounded-b-none  duration-150 select-none active:cursor-grabbing"
+                                    className="h-5 w-full cursor-ns-resize touch-none rounded-3xl rounded-b-none duration-150 select-none active:cursor-grabbing flex items-center justify-center"
                                     aria-label="Drag to resize or close"
                                     style={{ transition: 'background 0.2s' }}
                                 >
@@ -210,7 +235,7 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
                                         controls.start(e);
                                         
                                     }}
-                                    className="h-3 w-16 cursor-ns-resize touch-none rounded-full active:bg-[#b08b2e] active:w-20 duration-150 select-none bg-gray-300 active:cursor-grabbing"
+                                    className="h-1.5 w-16 cursor-ns-resize touch-none rounded-full active:bg-[#b08b2e] active:w-20 duration-150 select-none bg-gray-400 active:cursor-grabbing hover:bg-gray-500"
                                     aria-label="Drag to resize or close"
                                     style={{ transition: 'background 0.2s' }}></a>
                                 </button>
