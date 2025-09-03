@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.2.1](https://github.com/ShangProperties/ShangProperties/compare/v3.2.0...v3.2.1) (2025-09-03)
+
+
+### Bug Fixes
+
+* add TypeScript compilerOption ignoreDeprecations ([3b1eda1](https://github.com/ShangProperties/ShangProperties/commit/3b1eda1b9a8dda19b14ef7b063f2a1899a7ebf5b))
+* update tsconfig.tsbuildinfo ([b46419f](https://github.com/ShangProperties/ShangProperties/commit/b46419f15b29c974f34432e17944f52ac7e953ca))
+
 ## [3.2.0](https://github.com/ShangProperties/ShangProperties/compare/v3.1.0...v3.2.0) (2025-09-03)
 
 
