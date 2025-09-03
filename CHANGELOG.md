@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.3.0](https://github.com/ShangProperties/ShangProperties/compare/v3.2.1...v3.3.0) (2025-09-03)
+
+
+### Features
+
+* add cache headers for static images ([f3e67b0](https://github.com/ShangProperties/ShangProperties/commit/f3e67b0fe0f8cf457008b0543192028655122328))
+
 ### [3.2.1](https://github.com/ShangProperties/ShangProperties/compare/v3.2.0...v3.2.1) (2025-09-03)
 
 
