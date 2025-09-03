@@ -149,16 +149,17 @@ The app will be available at [http://localhost:5173](http://localhost:5173).
 
 This project uses automated version management with semantic versioning. Instead of manually updating the version in [package.json](file:///C:/Users/user/OneDrive/Documents/GitHub/Repositories/ShangProperties/package.json), use the built-in scripts:
 
-- `npm run release` — Create a new release with automatic version bumping
-- `npm run release:patch` — Create a new patch release (0.0.1)
-- `npm run release:minor` — Create a new minor release (0.1.0)
-- `npm run release:major` — Create a new major release (1.0.0)
+- `npm run release` — Create a new release with automatic version bumping and push to GitHub
+- `npm run release:patch` — Create a new patch release (0.0.1) and push to GitHub
+- `npm run release:minor` — Create a new minor release (0.1.0) and push to GitHub
+- `npm run release:major` — Create a new major release (1.0.0) and push to GitHub
 
 These commands will automatically:
 1. Increment the version in [package.json](file:///C:/Users/user/OneDrive/Documents/GitHub/Repositories/ShangProperties/package.json) and [package-lock.json](file:///C:/Users/user/OneDrive/Documents/GitHub/Repositories/ShangProperties/package-lock.json)
 2. Generate/update [CHANGELOG.md](file:///C:/Users/user/OneDrive/Documents/GitHub/Repositories/ShangProperties/CHANGELOG.md) based on commit messages
 3. Create a git commit with the version changes
 4. Create a git tag for the new version
+5. Automatically push all changes and tags to GitHub
 
 See [VERSIONING.md](VERSIONING.md) and [VERSIONING_SUMMARY.md](VERSIONING_SUMMARY.md) for more detailed information.
 
