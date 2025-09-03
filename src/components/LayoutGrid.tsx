@@ -176,12 +176,35 @@ export const LayoutGrid = ({ cards }: { cards: Card[] }) => {
 };
 
 const ImageComponent = ({ card }: { card: Card }) => {
+  // Determine appropriate image size based on card type
+  const getSize = () => {
+    if (card.className.includes('h-40')) {
+      // Small thumbnails in swiper
+      return { width: 400, height: 160 };
+    } else if (card.className.includes('h-60')) {
+      // Gallery thumbnails
+      return { width: 600, height: 240 };
+    } else if (card.className.includes('h-72')) {
+      // Main image
+      return { width: 800, height: 288 };
+    } else if (card.className.includes('h-96')) {
+      // Large main image
+      return { width: 1000, height: 384 };
+    } else if (card.className.includes('h-full')) {
+      // Fullscreen images
+      return { width: 1200 };
+    }
+    // Default size
+    return { width: 600, height: 400 };
+  };
+
+  const size = getSize();
+
   return (
     <div className="relative w-full h-full">
       <SkeletonImage
         src={card.thumbnail}
-        height={500}
-        width={500}
+        size={size}
         className={cn(
           "object-cover object-top absolute inset-0 h-full w-full transition duration-200 rounded-xl"
         )}
