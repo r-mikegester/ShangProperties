@@ -2,27 +2,40 @@ import { useEffect, useState } from "react";
 import { Carousel, Card } from "./ProjectCards";
 import { db } from "../firebase/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
+import projects from "../data/ProjectsIndex";
 
 export function AppleCardsCarouselDemo() {
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projectsData, setProjectsData] = useState<any[]>([]);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "projects"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setProjects(data);
+      try {
+        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        // If no projects in Firestore, fallback to static data
+        setProjectsData(data.length > 0 ? data : projects);
+      } catch (error) {
+        console.error("Error processing projects data:", error);
+        // Fallback to static data in case of error
+        setProjectsData(projects);
+      }
+    }, (error) => {
+      console.error("Error fetching projects from Firestore:", error);
+      // Fallback to static data in case of error
+      setProjectsData(projects);
     });
+    
     return () => unsub();
   }, []);
 
-  const cards = projects.map((project, index) => (
+  const cards = projectsData.map((project, index) => (
     <Card
-      key={project.id}
+      key={project.id || index}
       card={{
-        category: project.project_type || "Project",
+        category: project.project_type || project.type || "Project",
         title: project.formalName || project.title,
         src: project.image,
         content: null,
-        route: `/projects/${project.id}`,
+        route: `/projects/${project.id || index}`,
       }}
       index={index}
     />
