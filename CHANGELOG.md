@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.2.0](https://github.com/ShangProperties/ShangProperties/compare/v3.1.0...v3.2.0) (2025-09-03)
+
+
+### Features
+
+* update with asset management and versioning information ([fd2c439](https://github.com/ShangProperties/ShangProperties/commit/fd2c439a9d601d21817285e661eacf86fa7c8d7e))
+
 ## [3.1.0](https://github.com/ShangProperties/ShangProperties/compare/v2.0.1...v3.1.0) (2025-09-03)
 
 
