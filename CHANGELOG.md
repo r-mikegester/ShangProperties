@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.6.0](https://github.com/ShangProperties/ShangProperties/compare/v3.5.0...v3.6.0) (2025-09-04)
+
+
+### Features
+
+* (FullscreenImage) implement image URL optimization for various display contexts ([f07b25e](https://github.com/ShangProperties/ShangProperties/commit/f07b25ecada991c25b464e56aac02688b1cf7400))
+
+
+### Bug Fixes
+
+* (ImageComponent) dynamic image sizing for improved quality ([f166a81](https://github.com/ShangProperties/ShangProperties/commit/f166a81912cde1c8735a0ed70f63272f24151b29))
+
 ## [3.5.0](https://github.com/ShangProperties/ShangProperties/compare/v3.4.0...v3.5.0) (2025-09-03)
 
 
