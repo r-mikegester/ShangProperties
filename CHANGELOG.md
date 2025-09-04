@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.11.0](https://github.com/ShangProperties/ShangProperties/compare/v3.10.0...v3.11.0) (2025-09-04)
+
+
+### Features
+
+* Add CustomInquiryToast and LoadingIndicator components; enhance AdminLayout with inquiry listener and logging functionality ([4c40a75](https://github.com/ShangProperties/ShangProperties/commit/4c40a7596e24d5cb0af20874abdc11ecb814bb1b))
+* Enhance image loading and optimization in ProjectDetail component ([3b392b0](https://github.com/ShangProperties/ShangProperties/commit/3b392b0bf019971504acfde3d258085ac0b78f96))
+
 ## [3.10.0](https://github.com/ShangProperties/ShangProperties/compare/v3.9.1...v3.10.0) (2025-09-04)
 
 
