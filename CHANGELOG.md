@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.11.6](https://github.com/ShangProperties/ShangProperties/compare/v3.11.5...v3.11.6) (2025-09-04)
+
+
+### Bug Fixes
+
+* build update tsconfig.json settings ([bbbd226](https://github.com/ShangProperties/ShangProperties/commit/bbbd2265e2f1fbb9d4388fd7793f3a85313a6e31))
+
 ### [3.11.5](https://github.com/ShangProperties/ShangProperties/compare/v3.11.4...v3.11.5) (2025-09-04)
 
 ### [3.11.4](https://github.com/ShangProperties/ShangProperties/compare/v3.11.3...v3.11.4) (2025-09-04)
