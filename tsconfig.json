@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "ESNext",
+    "module": "Node16",
     "jsx": "react-jsx",
     "strict": true,
-    "moduleResolution": "Node10",
+    "moduleResolution": "node16",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
