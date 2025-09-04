@@ -4,6 +4,7 @@ import AppRoutes from "./router/routes"; // 👈 import your routing setup
 import "./assets/styles/index.css";
 import { Analytics } from "@vercel/analytics/react";
 import { NotificationProvider } from "./context/NotificationContext";
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 if (import.meta.env.PROD) {
   createRoot(document.getElementById("root")!).render(
@@ -11,6 +12,7 @@ if (import.meta.env.PROD) {
       <NotificationProvider>
         <AppRoutes />
         <Analytics />
+        <SpeedInsights />
       </NotificationProvider>
     </StrictMode>
   );
