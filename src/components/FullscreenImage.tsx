@@ -29,6 +29,24 @@ const FullscreenImage: React.FC<FullscreenImageProps> = ({ src, alt, caption, cl
   const [selectedGalleryIdx, setSelectedGalleryIdx] = useState(initialIndex ?? 0);
   const currentGalleryImage = hasGallery ? gallery[selectedGalleryIdx] : src;
 
+  // Optimize image URLs for different contexts
+  const getOptimizedImageUrl = (url: string, maxWidth?: number) => {
+    if (!url) return url;
+    
+    try {
+      const optimizedUrl = new URL(url);
+      if (maxWidth) {
+        optimizedUrl.searchParams.set('w', maxWidth.toString());
+      }
+      optimizedUrl.searchParams.set('q', '85'); // Good quality for fullscreen
+      optimizedUrl.searchParams.set('f', 'webp');
+      return optimizedUrl.toString();
+    } catch (e) {
+      // If URL parsing fails, return original URL
+      return url;
+    }
+  };
+
   // Debug: log iframe events
   const handleIframeError = () => {
     setIframeError(true);
@@ -90,7 +108,7 @@ const FullscreenImage: React.FC<FullscreenImageProps> = ({ src, alt, caption, cl
         <figure>
           <img
             className={className || "w-full object-cover rounded-xl cursor-pointer"}
-            src={src}
+            src={getOptimizedImageUrl(src, 800)} // Optimize for display
             alt={alt}
             loading="lazy"
             onClick={() => setOpen(true)}
@@ -162,7 +180,7 @@ const FullscreenImage: React.FC<FullscreenImageProps> = ({ src, alt, caption, cl
                 onClick={e => e.stopPropagation()}
               >
                 <img
-                  src={currentGalleryImage}
+                  src={getOptimizedImageUrl(currentGalleryImage)} // Full quality for fullscreen
                   alt={alt}
                   className="w-full h-[80vh] object-contain rounded-xl shadow-2xl"
                   style={{ background: '#222' }}
@@ -177,7 +195,7 @@ const FullscreenImage: React.FC<FullscreenImageProps> = ({ src, alt, caption, cl
                       onClick={e => { e.stopPropagation(); setSelectedGalleryIdx(idx); }}
                     >
                       <img
-                        src={img}
+                        src={getOptimizedImageUrl(img, 128)} // Small thumbnails
                         alt={`Thumbnail ${idx + 1}`}
                         className={`w-16 h-16 object-cover rounded ${selectedGalleryIdx === idx ? 'ring-2 ring-[#b08b2e]' : ''}`}
                         loading="lazy"
@@ -191,7 +209,7 @@ const FullscreenImage: React.FC<FullscreenImageProps> = ({ src, alt, caption, cl
               </motion.div>
             ) : (
               <motion.img
-                src={src}
+                src={getOptimizedImageUrl(src)} // Full quality for fullscreen
                 alt={alt}
                 loading="lazy"
                 initial={{ scale: 0.95, opacity: 0 }}

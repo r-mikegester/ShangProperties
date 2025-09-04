@@ -1,0 +1,5 @@
+#!/bin/sh
+# This is a husky hook that runs standard-version on each commit
+# Uncomment the following lines if you want automatic versioning on every commit
+# npx --no-install standard-version
+# git add package.json

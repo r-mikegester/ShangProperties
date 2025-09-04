@@ -53,7 +53,23 @@ router.post('/', async (req, res) => {
   };
 
   try {
-    await db.collection('inquiries').add(inquiryData);
+    const docRef = await db.collection('inquiries').add(inquiryData);
+
+    // Emit real-time event via socket.io
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('new_inquiry', {
+        id: docRef.id,
+        firstName,
+        lastName,
+        email,
+        phone,
+        country,
+        property,
+        message,
+        createdAt: new Date().toISOString(),
+      });
+    }
 
     // Validate SendGrid env vars
     if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_SENDER || !process.env.ADMIN_EMAIL) {

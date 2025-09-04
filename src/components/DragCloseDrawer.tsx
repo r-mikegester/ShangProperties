@@ -1,4 +1,4 @@
-import React, { Dispatch, ReactNode, SetStateAction, useState } from "react";
+import React, { Dispatch, ReactNode, SetStateAction, useState, useCallback, useMemo } from "react";
 import useMeasure from "react-use-measure";
 import {
     useDragControls,
@@ -38,13 +38,117 @@ interface Props {
     children?: ReactNode;
     onClose?: () => void;
     disableClose?: boolean;
-    drawerHeight?: string; // Add this line
+    drawerHeight?: string; // Height of the drawer when open
 }
 
-const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = false, drawerHeight = '75vh' }: Props) => {
+const DragCloseDrawer = ({
+    open,
+    setOpen,
+    children,
+    drawerHeight = "80vh",
+    onClose,
+    disableClose,
+}: {
+    open: boolean;
+    setOpen: Dispatch<SetStateAction<boolean>>;
+    children: ReactNode;
+    drawerHeight?: string;
+    onClose?: () => void;
+    disableClose?: boolean;
+}) => {
     const [scope, animate] = useAnimate();
     const [drawerRef, { height }] = useMeasure();
+    const [percent, setPercent] = useState(0);
+    const [dragging, setDragging] = useState(false);
+    const [dragPercent, setDragPercent] = useState<number | null>(null);
+    const startYRef = React.useRef<number | null>(null);
+    const startPercentRef = React.useRef<number>(0);
+    const percentMotion = useMotionValue(0);
+    const snapPoints = useMemo(() => [25, 50, 75, 100], []);
 
+    // Memoize calculations to prevent unnecessary re-renders
+    const calculatePercentFromHeight = useCallback(() => {
+        if (typeof drawerHeight === "string" && drawerHeight.endsWith("vh")) {
+            const vhPercent = parseFloat(drawerHeight);
+            return isNaN(vhPercent) ? 80 : vhPercent;
+        }
+
+        if (typeof drawerHeight === "string" && drawerHeight.endsWith("px")) {
+            const pxHeight = parseFloat(drawerHeight);
+            if (!isNaN(pxHeight) && pxHeight > 0) {
+                return Math.min(100, Math.round((pxHeight / window.innerHeight) * 100));
+            }
+        }
+
+        return 80;
+    }, [drawerHeight]);
+
+    React.useEffect(() => {
+        setPercent(calculatePercentFromHeight());
+    }, [calculatePercentFromHeight]);
+
+    // Unified drag/resize handle logic with optimized event handling
+    const handleResizeStart = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+        setDragging(true);
+        startYRef.current = e.clientY;
+        startPercentRef.current = percent;
+        setDragPercent(percent);
+        document.body.style.userSelect = 'none';
+    }, [percent]);
+
+    const handleResizeMove = useCallback((e: PointerEvent) => {
+        if (!dragging || startYRef.current === null) return;
+        const deltaY = startYRef.current - e.clientY;
+        const vh = window.innerHeight;
+        let newPercent = startPercentRef.current + (deltaY / vh) * 100;
+        newPercent = Math.max(25, Math.min(100, newPercent));
+        setDragPercent(newPercent);
+        percentMotion.set(newPercent);
+    }, [dragging, percentMotion]);
+
+    const handleResizeEnd = useCallback(() => {
+        if (dragPercent !== null) {
+            // Snap to nearest snapPoint
+            let closest = snapPoints.reduce((prev, curr) => 
+                Math.abs(curr - dragPercent) < Math.abs(prev - dragPercent) ? curr : prev
+            );
+            
+            // If dragged down enough, close the drawer
+            if (dragPercent < 20) {
+                setOpen(false);
+                if (onClose) onClose();
+            } else {
+                setPercent(closest);
+                percentMotion.stop();
+                percentMotion.set(closest);
+                setTimeout(() => setDragPercent(null), 150); // allow animation to finish
+            }
+        }
+        setDragging(false);
+        document.body.style.userSelect = '';
+    }, [dragPercent, snapPoints, setOpen, onClose, percentMotion]);
+
+    React.useEffect(() => {
+        if (!dragging) return;
+        const move = (e: PointerEvent) => handleResizeMove(e);
+        const up = () => handleResizeEnd();
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+        return () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+        };
+    }, [dragging, handleResizeMove, handleResizeEnd]);
+
+    // Animate percentMotion to percent when not dragging
+    React.useEffect(() => {
+        if (!dragging) {
+            percentMotion.stop();
+            percentMotion.set(percent);
+        }
+    }, [percent, dragging, percentMotion]);
+
+    // Drag-to-close logic
     const y = useMotionValue(0);
     const controls = useDragControls();
 
@@ -63,15 +167,22 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
     };
 
     const handleDragEnd = async () => {
-        if (disableClose) {
-            // Animate back to open position
-            await animate("#drawer", { y: 0 });
-        } else {
-            if (y.get() >= 100) {
-                handleClose();
-            }
+        if (y.get() >= 100) {
+            handleClose();
         }
     };
+
+    // Prevent background scroll when open
+    React.useEffect(() => {
+        if (open) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [open]);
 
     return (
         <>
@@ -80,8 +191,8 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
                     ref={scope}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    onClick={disableClose ? undefined : handleClose}
-                    className="fixed inset-0 z-[2999] bg-black/40"
+                    onClick={handleClose}
+                    className="fixed inset-0 z-[3001] bg-black/40"
                 >
                     <motion.div
                         id="drawer"
@@ -93,7 +204,11 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
                             ease: "easeInOut",
                         }}
                         className={`absolute bottom-0 w-full overflow-hidden rounded-t-3xl bg-white shadow-2xl`}
-                        style={{ y, height: drawerHeight }}
+                        style={{ 
+                            y, 
+                            height: drawerHeight,
+                            transition: dragging ? 'none' : 'height 0.25s cubic-bezier(0.4,0,0.2,1)' 
+                        }}
                         drag="y"
                         dragControls={controls}
                         onDragEnd={handleDragEnd}
@@ -107,26 +222,38 @@ const DragCloseDrawer = ({ open, setOpen, children, onClose, disableClose = fals
                             bottom: 0.5,
                         }}
                     >
-                        <div className="sticky top-0 z-20 bg-white border-b border-gray-100 p-4 flex items-center justify-center min-h-[48px]">
-                            <button
-                                onPointerDown={(e) => {
-                                    controls.start(e);
-                                }}
-                                className="h-2 w-12 cursor-grab touch-none rounded-full bg-gray-300 active:cursor-grabbing absolute left-1/2 -translate-x-1/2"
-                                aria-label="Drag to close"
-                            ></button>
-                            {onClose && !disableClose && (
+                        <div className="sticky top-0 z-20 bg-white p-1 flex items-center justify-between min-h-[28px]">
+                            <div className="flex-1 flex items-center justify-center relative">
                                 <button
-                                    className="text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none absolute right-4"
+                                    onPointerDown={(e) => {
+                                        controls.start(e);
+                                        handleResizeStart(e);
+                                    }}
+                                    className="h-5 w-full cursor-ns-resize touch-none rounded-3xl rounded-b-none duration-150 select-none active:cursor-grabbing flex items-center justify-center"
+                                    aria-label="Drag to resize or close"
+                                    style={{ transition: 'background 0.2s' }}
+                                >
+                                    <a onPointerDown={(e) => {
+                                        controls.start(e);
+                                        
+                                    }}
+                                    className="h-1.5 w-16 cursor-ns-resize touch-none rounded-full active:bg-[#b08b2e] active:w-20 duration-150 select-none bg-gray-400 active:cursor-grabbing hover:bg-gray-500"
+                                    aria-label="Drag to resize or close"
+                                    style={{ transition: 'background 0.2s' }}></a>
+                                </button>
+                            </div>
+                            {/* {onClose && !disableClose && (
+                                <button
+                                    className="text-red-400 hover:text-gray-700 text-2xl font-bold focus:outline-none ml-2"
                                     onClick={handleClose}
                                     aria-label="Close"
-                                    style={{ zIndex: 120 }}
+                                    style={{ zIndex: 4000 }}
                                 >
                                     ×
                                 </button>
-                            )}
+                            )} */}
                         </div>
-                        <div className="relative z-0 h-full overflow-y-scroll py-4 pt-2">
+                        <div className="relative z-0 h-full overflow-y-scroll">
                             {children}
                         </div>
                     </motion.div>

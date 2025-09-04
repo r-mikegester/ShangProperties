@@ -3,7 +3,6 @@ import Contact from "../../components/client/Contact";
 import InquireSheet from "../../components/InquireSheet";
 import { useState } from "react";
 import Footer from "../../components/shared/Footer";
-import profile from "../../assets/imgs/profile/VeneziaEspiritu.jpg";
 import { LayoutGrid } from "../../components/LayoutGrid";
 import FullscreenImage from "../../components/FullscreenImage";
 import projects from "../../data/ProjectsIndex";
@@ -145,7 +144,7 @@ const ShangSummit = () => {
                                 {/* Avatar Media */}
                                 <div className="group flex items-center gap-x-3 border-b border-gray-200 pb-8 mb-8">
                                     <a className="block shrink-0 focus:outline-hidden" href="#">
-                                        <img className="size-10 rounded-full" src={profile} alt="Avatar" />
+                                        <img className="size-10 rounded-full" src="https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/VeneziaEspiritu.jpg" alt="Avatar" />
                                     </a>
                                     <a className="group grow block focus:outline-hidden" href="">
                                         <h5 className="group-hover:text-gray-600 group-focus:text-gray-600 text-sm font-semibold text-gray-800">

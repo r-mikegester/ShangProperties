@@ -12,13 +12,13 @@ const App = () => {
     <>
       <ScrollToTop />
       {/* 🧭 Global navigation, header, footer can go here */}
-      {!location.pathname.startsWith("/dashboard") && <Navbar />}
+      {!location.pathname.startsWith("/Admin") ? <Navbar /> : null}
       <main className="h-screen text-[#1A1A1A]">
         <Outlet />
       </main>
 
       {/* 🌐 Toast notifications */}
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-center" autoClose={3000} />
 
       {/* Optional: Footer or global modals */}
     </>

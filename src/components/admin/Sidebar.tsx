@@ -1,155 +1,200 @@
-import React, { Dispatch, SetStateAction, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import {
-  FiHome,
-  FiShoppingCart,
-  FiUsers,
-  FiMonitor,
-  FiChevronsRight,
-  FiChevronDown,
-  FiLogOut,
-} from "react-icons/fi";
-import { Icon, Icon as IconifyIcon } from '@iconify/react';
+import React, { useState, type ReactNode } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
-import Venezia from "../../assets/imgs/profile/VeneziaEspiritu.jpg"; // Adjust the path as necessary
+import { ROUTE_PATHS } from "../../router/routePaths";
 
-const links = [
-  { title: "Dashboard", path: "/dashboard", Icon: "solar:chat-square-2-broken" },
-  { title: "Projects", path: "/dashboard/projects", Icon: "solar:inbox-archive-broken" },
-  { title: "Inquiries", path: "/dashboard/inquiries", Icon: "solar:letter-broken" },
-  { title: "Page Management", path: "/dashboard/page-management", Icon: "solar:feed-broken" },
+const sidebarLinks = [
+  {
+    title: "Dashboard",
+    icon: "solar:chat-square-2-broken",
+    path: ROUTE_PATHS.ADMIN_DASHBOARD,
+  },
+  {
+    title: "Inquiries",
+    icon: "solar:letter-broken",
+    path: ROUTE_PATHS.ADMIN_INQUIRIES,
+  },
+  {
+    title: "Projects",
+    icon: "solar:inbox-archive-broken",
+    path: ROUTE_PATHS.ADMIN_PROJECTS,
+  },
+  {
+    title: "Page Management",
+    icon: "solar:feed-broken",
+    path: ROUTE_PATHS.ADMIN_PAGE_MANAGEMENT,
+  },
+  // {
+  //   title: "Settings",
+  //   icon: "solar:settings-broken",
+  //   path: ROUTE_PATHS.ADMIN_SETTINGS,
+  // },
+  {
+    title: "Error Test",
+    icon: "solar:danger-triangle-broken",
+    path: ROUTE_PATHS.ADMIN_ERROR_TEST,
+  },
 ];
 
-const Sidebar: React.FC<{ open: boolean; setOpen: Dispatch<SetStateAction<boolean>> }> = ({ open, setOpen }) => {
-  const navigate = useNavigate();
+interface SidebarProps {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const SmoothHoverMenuItem = ({
+  children,
+  transitionDelayInMs = 300,
+}: { children: ReactNode; transitionDelayInMs?: number }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`rounded-lg border overflow-hidden cursor-pointer transition-transform ${
+        isHovered ? "border-neutral-400/30 scale-105" : "border-neutral-400/0 scale-100"
+      }`}
+      style={{
+        transition: "border-color, transform",
+        transitionDuration: isHovered ? "0ms" : `${transitionDelayInMs + 300}ms`,
+      }}
+    >
+      <div
+        className={`transition-colors px-0 py-0 ${isHovered ? "bg-neutral-400/20" : ""}`}
+        style={{
+          transition: "background-color",
+          transitionDuration: isHovered ? "0ms" : `${transitionDelayInMs + 300}ms`,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const location = useLocation();
-  const [selected, setSelected] = useState(() => {
-    const found = links.find(link => location.pathname.startsWith(link.path));
-    return found ? found.title : "Dashboard";
-  });
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Implement your logout logic here (e.g., clear tokens, redirect, etc.)
+    window.location.href = "/";
+  };
+
+  // Sidebar width for positioning the collapse button
+  const sidebarWidth = open ? 225 : 56;
 
   return (
     <motion.nav
       layout
-      className="sticky top-0 min-h-screen hidden md:block z-100 shrink-0 border-r border-slate-300 bg-white p-2"
-      style={{ width: open ? "225px" : "fit-content" }}
+      className="sticky top-0 h-screen shrink-0 border-r z-[2999] border-slate-300 bg-white p-2 flex flex-col"
+      style={{ width: open ? "225px" : "60px" }}
     >
-      <TitleSection open={open} />
-      <div className="space-y-1">
-        {links.map((link) => (
-          <Option
-            key={link.title}
-            Icon={link.Icon}
-            title={link.title}
-            selected={selected}
-            setSelected={setSelected}
-            open={open}
-            onClick={() => navigate(link.path)}
-          />
-        ))}
-      </div>
-      <div className="absolute -right-3 top-9 z-50">
-        <motion.button
-          layout
+      <div className="relative">
+        <TitleSection open={open} />
+        {/* Collapse button on the rim */}
+        <button
           onClick={() => setOpen((pv) => !pv)}
-          className="flex items-center justify-center rounded-full shadow bg-[#fff] text-[#b08b2e] hover:bg-[#f7f3e9] font-semibold"
-        >
-          <Icon icon="solar:square-double-alt-arrow-right-broken" width={24} height={24} className={`size-6 rounded-lg duration-300 hover:bg-[#b08b2e] hover:text-white transition-transform ${open && "rotate-180"}`} />
-          {/* {open && <span className="ml-2">Hide</span>} */}
-        </motion.button>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 flex flex-col gap-2 border-t border-[#b08b2e] bg-white p-2">
-        <Option
-          Icon={() => <Icon icon="solar:exit-broken" width={24} height={24} />}
-          title="Log out"
-          selected={selected}
-          setSelected={setSelected}
-          open={open}
-          onClick={() => {
-            import('firebase/auth').then(({ getAuth, signOut }) => {
-              signOut(getAuth());
-            });
+          className="absolute z-[2999] top-2 p-1 rounded-lg bg-white border-l-none border border-slate-300 shadow transition-colors hover:bg-slate-100"
+          style={{
+            left: open ? 225 - 15 : 60 - 15, // 18px to overlap the rim
+            // transition: 'left 0.3s',
           }}
-        />
+          aria-label="Toggle sidebar"
+        >
+          {open ? (
+            <Icon icon="solar:square-double-alt-arrow-left-broken" className="text-lg" />
+          ) : (
+            <Icon icon="solar:square-double-alt-arrow-right-broken" className="text-lg" />
+          )}
+        </button>
+      </div>
+      <div className="space-y-1 flex-1 flex flex-col justify-between">
+        <div className="flex flex-col gap-1">
+          {sidebarLinks.slice(0, -1).map(({ icon, title, path }) => (
+            <SmoothHoverMenuItem key={title}>
+              <NavLink
+                to={path}
+                end={path === "/Admin/Dashboard"}
+                className={({ isActive }) =>
+                  open
+                    ? `relative flex h-10 w-full items-center rounded-md px-2 transition-colors ${
+                        isActive
+                          ? "bg-[#b08b2e]/40 text-[#453610]"
+                          : "text-slate-500"
+                      }`
+                    : `relative flex items-center justify-center size-10 mx-auto rounded-lg transition-colors ${
+                        isActive
+                          ? "bg-[#b08b2e]/40 text-[#453610]"
+                          : "text-slate-500"
+                      }`
+                }
+              >
+                <motion.div layout className={`grid h-full ${open ? "w-10" : "w-full"} place-content-center text-lg`}>
+                  <Icon icon={icon} width={22} height={22} />
+                </motion.div>
+                {open && (
+                  <motion.span
+                    layout
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.125 }}
+                    className="text-xs font-medium"
+                  >
+                    {title}
+                  </motion.span>
+                )}
+              </NavLink>
+            </SmoothHoverMenuItem>
+          ))}
+        </div>
+        <div className="flex flex-col gap-1 mb-2">
+          <SmoothHoverMenuItem>
+            <NavLink
+              to={ROUTE_PATHS.ADMIN_SETTINGS}
+              className={
+                open
+                  ? "relative flex h-10 w-full items-center rounded-md px-2 transition-colors text-[#b08b2e]"
+                  : "relative flex items-center justify-center size-10 mx-auto rounded-lg transition-colors text-[#b08b2e]"
+              }
+            >
+              <motion.div layout className={`grid h-full ${open ? "w-10" : "w-full"} place-content-center text-lg`}>
+                <Icon icon="solar:settings-broken" width={20} height={20} />
+              </motion.div>
+              {open && (
+                <motion.span
+                  layout
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.125 }}
+                  className="text-xs font-medium"
+                >
+                  Settings
+                </motion.span>
+              )}
+            </NavLink>
+          </SmoothHoverMenuItem>
+        </div>
       </div>
     </motion.nav>
   );
 };
 
-const Option = ({
-  Icon,
-  title,
-  selected,
-  setSelected,
-  open,
-  onClick,
-  notifs,
-}: {
-  Icon: any;
-  title: string;
-  selected: string;
-  setSelected: Dispatch<SetStateAction<string>>;
-  open: boolean;
-  onClick?: () => void;
-  notifs?: number;
-}) => {
-  return (
-    <motion.button
-      layout
-      onClick={() => {
-        setSelected(title);
-        if (onClick) onClick();
-      }}
-      className={`relative flex h-10 w-full items-center rounded-md transition-colors p-2 ${selected === title ? "bg-[#b08b2e] text-[#f7f3e9] font-bold" : "text-slate-700 hover:bg-[#edddb3]"}`}
-    >
-      <motion.div layout className="grid h-full w-10 place-content-center text-lg">
-        {typeof Icon === 'string' ? <IconifyIcon icon={Icon} width={22} height={22} /> : <Icon />}
-      </motion.div>
-      {open && (
-        <motion.span
-          layout
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.125 }}
-          className="text-xs font-medium"
-        >
-          {title}
-        </motion.span>
-      )}
-      {notifs && open && (
-        <motion.span
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          style={{ y: "-50%" }}
-          transition={{ delay: 0.5 }}
-          className="absolute right-2 top-1/2 size-4 rounded bg-[#b08b2e] text-xs text-white"
-        >
-          {notifs}
-        </motion.span>
-      )}
-    </motion.button>
-  );
-};
-
 const TitleSection = ({ open }: { open: boolean }) => {
   return (
-    <div className="my-3 border-b border-[#b08b2e] pb-3">
-      <div className="flex cursor-pointer items-center justify-around p-2 rounded-md transition-colors ">
-        <div className="flex items-center gap-2">
-          <Logo />
-          {open && (
-            <motion.div
-              layout
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.125 }}
-            >
-              <span className="block text-xs font-semibold text-[#b08b2e]">Venezia Espiritu</span>
-              <span className="block text-xs text-slate-500">Shang Properties</span>
-            </motion.div>
-          )}
-        </div>
-
+    <div className={`mb-3 border-b border-slate-300 pb-3 flex items-center ${open ? "justify-between" : "justify-center"}`}>
+      <div className="flex items-center gap-2">
+        <Logo />
+        {open && (
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.125 }}
+          >
+            <span className="block text-sm text-[#b08b2e] font-semibold">Venezia Espiritu</span>
+            <span className="block text-xs text-slate-500">Shang Properties</span>
+          </motion.div>
+        )}
       </div>
     </div>
   );
@@ -157,12 +202,13 @@ const TitleSection = ({ open }: { open: boolean }) => {
 
 const Logo = () => {
   return (
-    <motion.div layout className="grid size-10 shrink-0 place-content-center rounded-md bg-[#b08b2e]">
-      <img src={Venezia} className="rounded-md" />
+    <motion.div
+      layout
+      className="grid size-10 shrink-0 place-content-center rounded-lg bg-[#b08b2e]"
+    >
+      <img src="https://6ovgprfdguxo1bkn.public.blob.vercel-storage.com/VeneziaEspiritu.jpg" alt="Logo" className="h-8 w-8 object-cover rounded-md" />
     </motion.div>
   );
 };
-
-// ToggleClose removed, now handled as a floating button at the top
 
 export default Sidebar;
