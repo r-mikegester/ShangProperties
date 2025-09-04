@@ -7,11 +7,11 @@ interface PaperNoteProps {
 
 const PaperNote: React.FC<PaperNoteProps> = ({ children, className = '' }) => {
   return (
-    <div className={`rounded-2xl relative bg-[#b08b2e]/30 shadow-[0px_0px_5px_0px_rgba(0,0,0,0.5)] ${className}`}>
+    <div className={`rounded-2xl relative shadow-md bg-[#b08b2e]/30  ${className}`}>
       {/* Holes */}
-      <div className="absolute left-2.5 top-[10%] h-6 w-6 bg-white rounded-full shadow-[inset_0px_0px_2px_0px_rgba(0,0,0,0.5)]"></div>
-      <div className="absolute left-2.5 top-1/2 h-6 w-6 bg-white rounded-full shadow-[inset_0px_0px_2px_0px_rgba(0,0,0,0.5)] -translate-y-1/2"></div>
-      <div className="absolute left-2.5 bottom-[10%] h-6 w-6 bg-white rounded-full shadow-[inset_0px_0px_2px_0px_rgba(0,0,0,0.5)]"></div>
+      <div className="absolute left-2.5 border border-gray-300 top-[10%] h-6 w-6 bg-white rounded-full shadow-[inset_0px_0px_2px_0px_rgba(0,0,0,0.5)]"></div>
+      <div className="absolute left-2.5 border border-gray-300 top-1/2 h-6 w-6 bg-white rounded-full shadow-[inset_0px_0px_2px_0px_rgba(0,0,0,0.5)] -translate-y-1/2"></div>
+      <div className="absolute left-2.5 border border-gray-300 bottom-[10%] h-6 w-6 bg-white rounded-full shadow-[inset_0px_0px_2px_0px_rgba(0,0,0,0.5)]"></div>
       
       {/* Lines and content */}
       <div className="ml-12 h-full w-[calc(100%-3rem)]">

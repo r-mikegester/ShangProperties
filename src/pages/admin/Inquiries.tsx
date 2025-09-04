@@ -1,4 +1,5 @@
 import React, { useEffect, useState, ChangeEvent, useMemo } from "react";
+import { useOutletContext, useLocation } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Icon } from "@iconify/react";
@@ -9,7 +10,7 @@ import Modal from "../../components/shared/Modal";
 import "react-toastify/dist/ReactToastify.css";
 import { collection, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
-import { useOutletContext } from "react-router-dom";
+import InquirySocketListener from "../../components/admin/InquirySocketListener";
 
 // const API_URL = "http://localhost:5000/api/inquiry";
 
@@ -69,6 +70,7 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
+
 const Inquiries: React.FC = () => {
   // Get context from AdminLayout
   const context = useOutletContext<{
@@ -82,6 +84,8 @@ const Inquiries: React.FC = () => {
     setSelectedInquiriesCount: (value: number) => void;
   }>();
 
+  const location = useLocation();
+
   // Use context values
   const {
     isInquiriesArchive,
@@ -91,6 +95,8 @@ const Inquiries: React.FC = () => {
     selectedInquiriesCount,
     setSelectedInquiriesCount
   } = context;
+
+  const isArchivedView = isInquiriesArchive;
 
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -161,6 +167,20 @@ const Inquiries: React.FC = () => {
     fetchInquiries();
   }, []);
 
+  // Effect to handle unread filter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const unreadFilter = params.get('unread') === 'true';
+
+    // If unread filter is true and we have inquiries, automatically open the first unread inquiry
+    if (unreadFilter && inquiries.length > 0) {
+      const firstUnread = inquiries.find(inquiry => !inquiry.read);
+      if (firstUnread) {
+        setSelectedInquiry(firstUnread);
+      }
+    }
+  }, [location.search, inquiries]);
+
   // Listen for mass archive event from NavBar
   useEffect(() => {
     const handleMassArchiveEvent = () => {
@@ -179,6 +199,24 @@ const Inquiries: React.FC = () => {
       window.removeEventListener('inquiriesMassDelete', handleMassDeleteEvent);
     };
   }, [selectedInquiries]);
+
+  // Listen for openInquiry event
+  useEffect(() => {
+    const handleOpenInquiry = (event: CustomEvent) => {
+      const inquiryId = event.detail;
+      const inquiry = inquiries.find(inq => inq.id === inquiryId);
+      if (inquiry) {
+        setSelectedInquiry(inquiry);
+        // For mobile, the drawer will automatically open because we set selectedInquiry
+        // For desktop, the detail panel is always visible
+      }
+    };
+
+    window.addEventListener('openInquiry', handleOpenInquiry as EventListener);
+    return () => {
+      window.removeEventListener('openInquiry', handleOpenInquiry as EventListener);
+    };
+  }, [inquiries]);
 
   // Delete inquiry
   const handleDelete = async (id: string) => {
@@ -480,16 +518,21 @@ const Inquiries: React.FC = () => {
           <div className={isInquiriesEditMode ? "" : ""}>
             <div className="flex flex-col md:flex-row md:items-center space-x- md:gap-4 justify-between w-full">
               <div className="flex flex-row items-center gap-2">
-                 {isInquiriesEditMode && (
-          <div className="">
-            <input
-              type="checkbox"
-              checked={selectedInquiries.includes(inq.id)}
-              onChange={() => toggleInquirySelection(inq.id)}
-              className="h-5 w-5 text-[#b08b2e] bg-white rounded-lg"
-            />
-          </div>
-        )}
+                {isInquiriesEditMode && (
+                  <div className="">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedInquiries.includes(inq.id)}
+                        onChange={() => toggleInquirySelection(inq.id)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-5 h-5 bg-white border border-gray-300 rounded-lg peer-checked:bg-[#b08b2e] text-white peer-checked:border-[#b08b2e] peer-focus:ring-2 peer-focus:ring-[#b08b2e] flex items-center justify-center transition-colors duration-200">
+                        <Icon icon="mingcute:check-2-fill" width="24" height="24" />
+                      </div>
+                    </label>
+                  </div>
+                )}
                 {inq.read ? (
                   <Icon icon="solar:letter-broken" className="text-[#b08b2e] size-10" />
                 ) : (
@@ -499,10 +542,11 @@ const Inquiries: React.FC = () => {
                   <span className="font-medium text-slate-800">{inq.firstName} {inq.lastName}</span>
                   <span className="text-xs text-slate-500">{inq.email}</span>
                 </div>
-              </div>
-              <div className="flex flex-col md:flex-row md:items-center md:gap-2 ml-10">
+                 <div className="flex flex-col md:flex-row md:items-center md:gap-2 md:ml-10 ml-2">
                 <span className="text-xs text-right text-slate-400">{formatDateTime(inq.createdAt) === '-' ? 'No date' : formatDateTime(inq.createdAt)}</span>
               </div>
+              </div>
+             
             </div>
           </div>
         </SmoothHoverMenuItem>
@@ -511,9 +555,10 @@ const Inquiries: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full pb-24 md:pb-0">
-      <div className="flex p-0 flex-col items-center justify-center min-h-[85vh] h-[90vh] max-h-full rounded-xl overflow-hidden">
-        <div className="bg-white rounded-xl shadow-lg p-3 w-full max-w-full flex flex-col md:flex-row items-stretch gap-6 h-full">
+    <div className="flex flex-col h-full bg-white pb-24 md:pb-0">
+      <InquirySocketListener />
+      <div className="flex p-0 flex-col items-center bg-white justify-center h-full md:min-h-[85vh] md:h-[90vh] max-h-full overflow-hidden">
+        <div className="bg-white p-3 w-full max-w-full flex flex-col md:flex-row items-stretch gap-6 h-full">
           {/* Inquiry List (scrollable) */}
           <div className="flex-1 min-w-[260px] max-w-md border-r border-slate-100 pr-2 h-full overflow-y-auto">
             <div className="sticky top-0 z-10 bg-white pb-2 shadow-b-md pt-2 w-full">
@@ -568,18 +613,32 @@ const Inquiries: React.FC = () => {
                     ? "Deselect All"
                     : "Select All"}
                 </button>
-                {!showArchived && ( // For active inquiries, show archive option
+                {!isInquiriesArchive && ( // For active inquiries, show archive option
                   <button
-                    onClick={handleMassArchive}
+                    onClick={() => {
+                      if (selectedInquiries.length === 0) {
+                        toast.warn("No inquiries selected");
+                        return;
+                      }
+                      setShowArchiveConfirm(true);
+                      toast.info(`Archiving ${selectedInquiries.length} inquiry(s)`);
+                    }}
                     disabled={selectedInquiries.length === 0}
-                    className={`px-3 py-1 text-sm rounded-lg ${selectedInquiries.length === 0 ? 'bg-gray-300' : 'bg-orange-500 hover:bg-orange-600'} text-white`}
+                    className={`px-3 py-1 text-sm rounded-lg ${selectedInquiries.length === 0 ? 'bg-gray-300' : 'bg-[#b08b2e] hover:bg-[#b08b2e]'} text-white`}
                   >
                     Archive ({selectedInquiries.length})
                   </button>
                 )}
-                {showArchived && ( // For archived inquiries, show delete option
+                {isInquiriesArchive && ( // For archived inquiries, show delete option
                   <button
-                    onClick={handleMassDelete}
+                    onClick={() => {
+                      if (selectedInquiries.length === 0) {
+                        toast.warn("No inquiries selected");
+                        return;
+                      }
+                      setShowDeleteConfirm(true);
+                      toast.info(`Deleting ${selectedInquiries.length} inquiry(s)`);
+                    }}
                     disabled={selectedInquiries.length === 0}
                     className={`px-3 py-1 text-sm rounded-lg ${selectedInquiries.length === 0 ? 'bg-gray-300' : 'bg-red-500 hover:bg-red-600'} text-white`}
                   >
@@ -655,12 +714,14 @@ const Inquiries: React.FC = () => {
                   </>
                 ) : filteredInquiries.length === 0 ? (
                   <div className="text-slate-400 py-4 text-center">
-                    {showArchived
+                    {isInquiriesArchive
                       ? "No archived inquiries found."
                       : "No inquiries found."}
                   </div>
                 ) : (
-                  filteredInquiries.map((inq) => renderInquiryItem(inq))
+                  <ul>
+                    {filteredInquiries.map((inq) => renderInquiryItem(inq))}
+                  </ul>
                 )}
               </ul>
             )}
@@ -679,71 +740,141 @@ const Inquiries: React.FC = () => {
               onClose={() => setSelectedInquiry(null)}
               drawerHeight="80vh"
             >
-              <div className="p-4 flex flex-col space-y-3 h-full">
+              <div className="p-4 flex flex-col h-full">
                 {selectedInquiry ? (
                   <>
-                   {/* Action buttons for mobile preview */}
-                    <div className="flex gap-2 mt-4">
-                      <button
-                        onClick={async () => {
-                          if (selectedInquiry) {
-                            await markAsRead(selectedInquiry);
-                            // Update local state to reflect the change
-                            setSelectedInquiry({ ...selectedInquiry, read: true });
-                          }
-                        }}
-                        disabled={selectedInquiry?.read}
-                        className={`flex-1 py-2 px-4 rounded-lg transition ${selectedInquiry?.read
-                            ? 'bg-gray-300 cursor-not-allowed'
-                            : 'bg-green-500 hover:bg-green-600 text-white'
-                          }`}
-                      >
-                        {selectedInquiry?.read ? 'Marked as Read' : 'Mark as Read'}
-                      </button>
-                      {!isInquiriesArchive && (
-                        <button
-                          onClick={() => {
-                            if (selectedInquiry) {
-                              handleArchive(selectedInquiry.id);
-                              setSelectedInquiry(null);
-                            }
-                          }}
-                          className="flex-1 py-2 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition"
-                        >
-                          Archive
-                        </button>
-                      )}
-                      {isInquiriesArchive && (
-                        <button
-                          onClick={() => {
-                            if (selectedInquiry) {
-                              handleRestore(selectedInquiry.id);
-                              setSelectedInquiry(null);
-                            }
-                          }}
-                          className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
-                        >
-                          Restore
-                        </button>
-                      )}
-                    </div>
-                    <PaperNote className="flex-1 w-full">
-                      <div className="p-6 pl-0 h-full overflow-y-auto">
-                        <div className="space-y-3">
-                          <div><span className="font-semibold">Date:</span> {formatDateTime(selectedInquiry?.createdAt)}</div>
-                          <div><span className="font-semibold">Name:</span> {selectedInquiry.firstName} {selectedInquiry.lastName}</div>
-                          <div><span className="font-semibold">Email:</span> {selectedInquiry.email}</div>
-                          <div><span className="font-semibold">Phone:</span> {selectedInquiry.phone}</div>
-                          <div><span className="font-semibold">Country:</span> {selectedInquiry.country}</div>
-                          <div><span className="font-semibold">Property:</span> {selectedInquiry.property}</div>
-                          <div><span className="font-semibold">Message:</span> {selectedInquiry.message}</div>
+                    <div className="flex items-center justify-between w-full py-2 ">
+                      <div><span className="font-semibold">from: </span> {selectedInquiry.firstName} {selectedInquiry.lastName}</div>
+                      <div>
+                        <div className="">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                if (selectedInquiry) {
+                                  await markAsRead(selectedInquiry);
+                                  // Update local state to reflect the change
+                                  setSelectedInquiry({ ...selectedInquiry, read: true });
+                                  toast.success("Inquiry marked as read");
+                                }
+                              }}
+                              disabled={selectedInquiry?.read}
+                              className={`flex-1 p-2 rounded-lg transition flex items-center justify-center gap-1 ${selectedInquiry?.read
+                                ? 'text-gray-600 cursor-not-allowed'
+                                : 'bg-green-500 hover:bg-green-600 text-white'
+                                }`}
+                            >
+                              {/* {selectedInquiry?.read ? (
+                                <>
+                                  <Icon icon="solar:letter-opened-broken" width="24" height="24" />
+                                  <span className="hidden md:inline">Marked as Read</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Icon icon="solar:letter-check-broken" width="24" height="24" />
+                                  <span className="hidden md:inline">Mark as Read</span>
+                                </>
+                              )} */}
+                            </button>
+                            {!isInquiriesArchive && (
+                              <button
+                                onClick={() => {
+                                  if (selectedInquiry) {
+                                    handleArchive(selectedInquiry.id);
+                                    setSelectedInquiry(null);
+                                    toast.info("Inquiry archived");
+                                  }
+                                }}
+                                className="flex-1 p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition flex items-center justify-center gap-1"
+                              >
+                                <Icon icon="solar:archive-broken" width="24" height="24" />
+                                <span className="hidden md:inline">Archive</span>
+                              </button>
+                            )}
+                            {isInquiriesArchive && (
+                              <button
+                                onClick={() => {
+                                  if (selectedInquiry) {
+                                    handleRestore(selectedInquiry.id);
+                                    setSelectedInquiry(null);
+                                    toast.success("Inquiry restored");
+                                  }
+                                }}
+                                className="flex-1 p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition flex items-center justify-center gap-1"
+                              >
+                                <Icon icon="solar:archive-minimalistic-broken" width="24" height="24" />
+                                <span className="hidden md:inline">Restore</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </PaperNote>
-                   
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <PaperNote className="h-full w-full">
+                        <div className="p-6 pl-0 h-full overflow-y-auto">
+                          <div className="space-y-3">
+                            <div><span className="font-semibold">Date:</span> {formatDateTime(selectedInquiry?.createdAt)}</div>
+                            {/* <div><span className="font-semibold">Name:</span> {selectedInquiry.firstName} {selectedInquiry.lastName}</div> */}
+                            <div><span className="font-semibold">Email:</span> {selectedInquiry.email}</div>
+                            <div><span className="font-semibold">Phone:</span> {selectedInquiry.phone}</div>
+                            <div><span className="font-semibold">Country:</span> {selectedInquiry.country}</div>
+                            <div><span className="font-semibold">Property:</span> {selectedInquiry.property}</div>
+                            <div><span className="font-semibold">Message:</span> {selectedInquiry.message}</div>
+                          </div>
+                        </div>
+                      </PaperNote>
+                    </div>
+
+                    {/* Action buttons for mobile preview - properly positioned at the bottom */}
+                    {/* <div className="pt-2 mb-10">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            if (selectedInquiry) {
+                              await markAsRead(selectedInquiry);
+                              // Update local state to reflect the change
+                              setSelectedInquiry({ ...selectedInquiry, read: true });
+                            }
+                          }}
+                          disabled={selectedInquiry?.read}
+                          className={`flex-1 py-2 px-4 rounded-lg transition ${selectedInquiry?.read
+                            ? 'bg-gray-300 cursor-not-allowed'
+                            : 'bg-green-500 hover:bg-green-600 text-white'
+                            }`}
+                        >
+                          {selectedInquiry?.read ? 'Marked as Read' : 'Mark as Read'}
+                        </button>
+                        {!isInquiriesArchive && (
+                          <button
+                            onClick={() => {
+                              if (selectedInquiry) {
+                                handleArchive(selectedInquiry.id);
+                                setSelectedInquiry(null);
+                              }
+                            }}
+                            className="flex-1 py-2 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition"
+                          >
+                            Archive
+                          </button>
+                        )}
+                        {isInquiriesArchive && (
+                          <button
+                            onClick={() => {
+                              if (selectedInquiry) {
+                                handleRestore(selectedInquiry.id);
+                                setSelectedInquiry(null);
+                              }
+                            }}
+                            className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
+                          >
+                            Restore
+                          </button>
+                        )}
+                      </div>
+                    </div> */}
                   </>
                 ) : (
-                  <div className="text-slate-400">Select an inquiry to preview details.</div>
+                  <div className="text-slate-400 flex items-center justify-center h-full">Select an inquiry to preview details.</div>
                 )}
               </div>
             </DragCloseDrawer>
@@ -983,7 +1114,11 @@ const Inquiries: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      {/* End of confirmation modals */}
     </div>
+    // End of main container
+
   );
 };
 
