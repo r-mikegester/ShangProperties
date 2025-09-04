@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.11.4](https://github.com/ShangProperties/ShangProperties/compare/v3.11.3...v3.11.4) (2025-09-04)
+
+
+### Bug Fixes
+
+* build remove TypeScript ignoreDeprecations setting ([d30bc35](https://github.com/ShangProperties/ShangProperties/commit/d30bc35194be7c71b801595d00770e761369134a))
+
 ### [3.11.3](https://github.com/ShangProperties/ShangProperties/compare/v3.11.2...v3.11.3) (2025-09-04)
 
 
