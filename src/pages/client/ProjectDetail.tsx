@@ -152,7 +152,12 @@ const ProjectDetail = () => {
                                 {/* Avatar Media */}
                                 <div className="group flex flex-col sm:flex-row items-center gap-3 border-b border-gray-200 pb-8 mb-8 text-center sm:text-left">
                                     <a className="block shrink-0 focus:outline-hidden" href="#">
-                                        <img className="size-10 rounded-full mx-auto sm:mx-0" src="https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/VeneziaEspiritu.jpg" alt="Avatar" />
+                                        <img 
+                                          className="size-10 rounded-full mx-auto sm:mx-0" 
+                                          src="https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/VeneziaEspiritu.jpg?w=80&q=80&f=webp" 
+                                          alt="Avatar" 
+                                          loading="lazy"
+                                        />
                                     </a>
                                     <a className="group grow block focus:outline-hidden" href="">
                                         <h5 className="group-hover:text-gray-600 group-focus:text-gray-600 text-sm font-semibold text-gray-800">
@@ -186,7 +191,12 @@ const ProjectDetail = () => {
                                                 <SmoothHoverMenuItem transitionDelayInMs={200}>
                                                     <div className="flex items-center gap-4">
                                                         <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
-                                                            <img src={p.image} alt={p.title} className="w-full h-full object-cover object-center" loading="lazy" />
+                                                            <img 
+                                                              src={`${p.image}?w=128&q=80&f=webp`} 
+                                                              alt={p.title} 
+                                                              className="w-full h-full object-cover object-center" 
+                                                              loading="lazy" 
+                                                            />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="text-base sm:text-lg font-semibold text-gray-800 castoro-titling-regular truncate">
