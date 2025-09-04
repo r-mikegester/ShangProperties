@@ -17,12 +17,23 @@ const WackWack = lazy(() => import("../pages/client/WackWack"));
 const ProjectDetail = lazy(() => import("../pages/client/ProjectDetail"));
 const Dashboard = lazy(() => import("../pages/admin/Dashboard"));
 const Projects = lazy(() => import("../pages/admin/Projects"));
-const Projects2Management = lazy(() => import("../pages/admin/Projects2Management"));
+// const Projects2Management = lazy(() => import("../pages/admin/Projects2Management"));
 const Inquiries = lazy(() => import("../pages/admin/Inquiries"));
 const PageManagement = lazy(() => import("../pages/admin/PageManagement"));
+const Settings = lazy(() => import("../pages/admin/Settings"));
+const ErrorTest = lazy(() => import("../pages/admin/ErrorTest"));
+const AdminLogin = lazy(() => import("../components/auth/Login"));
+// Removed AssetUploader import
 
 // Set your allowed admin emails here
-const ADMIN_EMAILS = ["guidetoshangproperties@gmail.com"];
+// TODO: Update with your actual admin email addresses
+const ADMIN_EMAILS = [
+  "guidetoshangproperties@gmail.com",
+  // Add your email here for testing:
+  // "your.email@example.com"  // <-- Replace with your actual email
+  // Example: "admin@shangproperties.com"
+  // For testing, you can temporarily add your email here
+];
 
 const AppRoutes = () => {
   return (
@@ -31,16 +42,18 @@ const AppRoutes = () => {
         <Routes>
           {/* 🧩 App is the layout wrapper */}
           <Route path="/" element={<App />}>
+            {/* Client routes at root level */}
             <Route index element={<Home />} />
-            <Route path="/Haraya" element={<Haraya />} />
-            <Route path="/Aurelia" element={<Aurelia />} />
-            <Route path="/Laya" element={<Laya />} />
-            <Route path="/WackWack" element={<WackWack />} />
-            <Route path="/ShangSummit" element={<ShangSummit />} />
-            <Route path="/projects/:id" element={<ProjectDetail />} />
-            {/* Admin routes with sidebar */}
+            <Route path="Haraya" element={<Haraya />} />
+            <Route path="Aurelia" element={<Aurelia />} />
+            <Route path="Laya" element={<Laya />} />
+            <Route path="WackWack" element={<WackWack />} />
+            <Route path="ShangSummit" element={<ShangSummit />} />
+            <Route path="projects/:id" element={<ProjectDetail />} />
+            
+            {/* Admin routes under /Admin prefix */}
             <Route
-              path="/dashboard"
+              path="/Admin/*"
               element={
                 <ProtectedRoute allowedEmails={ADMIN_EMAILS}>
                   <DashboardStatsProvider>
@@ -49,12 +62,20 @@ const AppRoutes = () => {
                 </ProtectedRoute>
               }
             >
+              {/* Index route redirects to Dashboard */}
               <Route index element={<Dashboard />} />
-              <Route path="projects" element={<Projects />} />
-              <Route path="projects2" element={<Projects2Management />} />
-              <Route path="inquiries" element={<Inquiries />} />
-              <Route path="page-management" element={<PageManagement />} />
+              <Route path="Dashboard" element={<Dashboard />} />
+              <Route path="Projects" element={<Projects />} />
+              <Route path="Projects/Archive" element={<Projects />} />
+              <Route path="Inquiries" element={<Inquiries />} />
+              <Route path="PageManagement" element={<PageManagement />} />
+              <Route path="Settings" element={<Settings />} />
+              <Route path="ErrorTest" element={<ErrorTest />} />
             </Route>
+            
+            {/* Public admin login route */}
+            <Route path="/login" element={<AdminLogin />} />
+            
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

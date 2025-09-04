@@ -6,20 +6,23 @@ import { useDashboardStats } from "../../context/DashboardStatsContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/dashboard/inquiries": "Inquiries",
-  "/dashboard/projects": "Project Management",
-  "/dashboard/page-management": "Page Management",
+  "/Admin": "Dashboard",
+  "/Admin/Dashboard": "Dashboard",
+  "/Admin/Inquiries": "Inquiries",
+  "/Admin/Projects": "Project Management",
+  "/Admin/PageManagement": "Page Management",
+  "/Admin/Settings": "Settings",
 };
 
 const getPageTitle = (pathname: string, context?: string, isArchived?: boolean) => {
-  if (pathname.startsWith("/dashboard/projects") || pathname.startsWith("/admin/projects")) return "Projects";
-  if (pathname.startsWith("/dashboard/inquiries") || pathname.startsWith("/admin/inquiries")) {
+  if (pathname.startsWith("/Admin/Projects")) return "Projects";
+  if (pathname.startsWith("/Admin/Inquiries")) {
     if (context === "inquiries" && isArchived) return "Archives";
     return "Inquiries";
   }
-  if (pathname.startsWith("/dashboard/page-management") || pathname.startsWith("/admin/page-management")) return "Page Setup";
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) return "Dashboard";
+  if (pathname.startsWith("/Admin/PageManagement")) return "Page Setup";
+  if (pathname === "/Admin" || pathname === "/Admin/Dashboard") return "Dashboard";
+  if (pathname.startsWith("/Admin/Settings")) return "Settings";
   return "Admin Panel";
 };
 
@@ -27,6 +30,7 @@ interface NavBarProps {
   toolbarActions?: React.ReactNode;
   // Common
   onToggleMenu?: () => void;
+  onLogout?: () => void;
   // Dashboard
   onRefresh?: () => void;
   // Inquiries
@@ -36,6 +40,8 @@ interface NavBarProps {
   onProjectAdd?: () => void;
   onProjectToggleArchive?: () => void;
   isProjectArchive?: boolean;
+  onViewModeToggle?: () => void;
+  viewMode?: "grid" | "list";
   // Page Management
   onPageEdit?: () => void;
   onPlaceholder?: () => void;
@@ -48,7 +54,7 @@ interface NavBarProps {
   onInquiriesMassArchive?: () => void;
   onInquiriesMassDelete?: () => void;
 
-  // Additional props for archive view and edit mode toggles in nav
+  // Additional props for the archive view and edit mode toggles in nav
   onInquiriesArchiveViewToggle?: () => void;
   isInquiriesArchiveViewState?: boolean;
   onInquiriesEditModeToggle?: () => void;
@@ -60,15 +66,22 @@ interface NavBarProps {
   onPageSave?: () => void;
   onPageCancel?: () => void;
   onPageRefresh?: () => void;
+  
+  // Project image text overlay toggle
+  showProjectImageText?: boolean;
+  onToggleProjectImageText?: () => void;
 }
 
 export const NavBar: React.FC<NavBarProps> = ({
   toolbarActions,
   onToggleMenu,
+  onLogout,
   onRefresh,
   onProjectToggleArchive,
   onProjectAdd,
   isProjectArchive,
+  onViewModeToggle,
+  viewMode,
   onInquiriesArchive,
   isInquiriesArchiveView,
   isInquiriesEditMode,
@@ -88,6 +101,9 @@ export const NavBar: React.FC<NavBarProps> = ({
   onPageSave,
   onPageCancel,
   onPageRefresh,
+  // Project image text overlay toggle
+  showProjectImageText,
+  onToggleProjectImageText,
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -99,13 +115,15 @@ export const NavBar: React.FC<NavBarProps> = ({
   const menuDropdownRef = useRef<HTMLDivElement>(null);
 
   // Determine page title based on location and context
-  const context = location.pathname.startsWith("/dashboard/projects") || location.pathname.startsWith("/admin/projects")
+  const context: "dashboard" | "projects" | "inquiries" | "page-management" | "settings" = location.pathname.startsWith("/Admin/Projects")
     ? "projects"
-    : location.pathname.startsWith("/dashboard/inquiries") || location.pathname.startsWith("/admin/inquiries")
+    : location.pathname.startsWith("/Admin/Inquiries")
       ? "inquiries"
-      : location.pathname.startsWith("/dashboard/page-management") || location.pathname.startsWith("/admin/page-management")
+      : location.pathname.startsWith("/Admin/PageManagement")
         ? "page-management"
-        : "dashboard";
+        : location.pathname.startsWith("/Admin/Settings")
+          ? "settings"
+          : "dashboard";
 
   const isArchived = (context === "inquiries" && isInquiriesArchiveView) || (context === "projects" && isProjectArchive);
   const pageTitle = getPageTitle(location.pathname, context, isArchived);
@@ -115,6 +133,15 @@ export const NavBar: React.FC<NavBarProps> = ({
     name: "Venezia Espiritu",
     info: "Shang Properties Inc.",
     avatar: "https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/VeneziaEspiritu.jpg",
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    } else {
+      window.location.href = "/";
+    }
   };
 
   // Close dropdowns on outside click
@@ -225,7 +252,7 @@ export const NavBar: React.FC<NavBarProps> = ({
                             );
 
                             // Navigate to inquiries page
-                            navigate("/dashboard/inquiries");
+                            navigate("/inquiries");
 
                             // If it's an inquiry notification, send event to open the inquiry
                             if (n.type === "inquiry" && n.inquiryId) {
@@ -256,13 +283,15 @@ export const NavBar: React.FC<NavBarProps> = ({
                 )}
               </AnimatePresence>
             </div>
+       
             
+            {/* Settings button for mobile view */}
             <button
               className="md:hidden p-2 rounded hover:bg-slate-100 transition"
-              onClick={() => navigate("/dashboard/settings")}
+              onClick={() => navigate("/Admin/Settings")}
               aria-label="Settings"
             >
-              <Icon icon="solar:settings-broken" width={24} height={24} className="text-[#B08B2E]" />
+              <Icon icon="solar:settings-broken" width={24} height={24} className=" text-gray-600" />
             </button>
           </>
         )}
@@ -293,9 +322,9 @@ export const NavBar: React.FC<NavBarProps> = ({
             <button
               type="button"
               aria-label={isInquiriesArchiveView ? "Show active inquiries" : "Show archived inquiries"}
-              className={`p-2 rounded-lg transition shadow ${isInquiriesArchiveView
+              className={`p-2 rounded-lg transition ${isInquiriesArchiveView
                   ? 'bg-[#b08b2e] text-white hover:bg-[#a07a1e]'
-                  : 'bg-gray-200 text-[#b08b2e] hover:bg-[#b08b2e]/10'
+                  : 'text-gray-600 hover:bg-[#b08b2e]/10'
                 }`}
               onClick={onInquiriesArchive}
             >
@@ -365,22 +394,51 @@ export const NavBar: React.FC<NavBarProps> = ({
             <button
               type="button"
               aria-label="Add project"
-              className="p-2 rounded-lg hover:bg-[#b08b2e] text-gray-600 hover:text-white transition hover:shadow-md"
+              className="p-2  text-gray-600 hover:bg-[#b08b2e]/10 hover:text-gray-600 rounded-lg transition flex items-center gap-2"
               onClick={onProjectAdd}
             >
-              <Icon icon="solar:add-circle-broken" width={24} height={24} />
+              <Icon icon="solar:add-folder-broken" width="24" height="24" />
+              {/* <span className="hidden md:inline">Add Project</span> */}
             </button>
+            {/* <button
+              type="button"
+              aria-label={viewMode === 'grid' ? "Switch to list view" : "Switch to grid view"}
+              className="p-2 bg-white text-gray-600  hover:bg-[#b08b2e]/10 rounded-lg  transition"
+              onClick={onViewModeToggle}
+              title={viewMode === 'grid' ? "Switch to list view" : "Switch to grid view"}
+            >
+              <Icon 
+                icon={viewMode === 'grid' ? "solar:server-minimalistic-broken" : "solar:gallery-wide-broken"} 
+                width="24" 
+                height="24" 
+              />
+            </button> */}
             <button
               type="button"
               aria-label={isProjectArchive ? "Show projects" : "Show archive"}
-              className={`p-2 rounded-lg transition shadow ${isProjectArchive
+              className={`p-2 rounded-lg transition flex items-center gap-2 ${
+                isProjectArchive
                   ? 'bg-[#b08b2e] text-white hover:bg-[#a07a1e]'
-                  : 'bg-gray-200 text-[#b08b2e] hover:bg-[#b08b2e]/10'
-                }`}
+                  : 'text-gray-600 hover:bg-[#b08b2e]/10'
+              }`}
               onClick={onProjectToggleArchive}
             >
-              <Icon icon={isProjectArchive ? 'solar:archive-minimalistic-broken' : 'solar:archive-broken'} width={24} height={24} />
+              <Icon icon="solar:archive-broken" width="24" height="24" />
+              {/* <span className="hidden md:inline">Archived Projects</span> */}
             </button>
+            {onToggleProjectImageText && (
+              <button
+                type="button"
+                aria-label={showProjectImageText ? "Hide image text" : "Show image text"}
+                className={`p-2 rounded-lg transition ${showProjectImageText
+                    ? 'bg-[#b08b2e] text-white hover:bg-[#a07a1e]'
+                    : 'text-gray-600 hover:bg-[#b08b2e]/10'
+                  }`}
+                onClick={onToggleProjectImageText}
+              >
+                <Icon icon={showProjectImageText ? 'solar:text-field-broken' : 'solar:text-cross-bold'} width={24} height={24} />
+              </button>
+            )}
           </div>
         )}
 
@@ -389,15 +447,15 @@ export const NavBar: React.FC<NavBarProps> = ({
             <button
               type="button"
               aria-label="Edit content"
-              className="p-2 rounded-lg bg-[#b08b2e] text-white hover:bg-[#a07a1e] transition shadow"
-              onClick={onPageEditToggle || onPageEditToggle}
+              className="p-2 rounded-lg text-gray-600 hover:bg-[#a07a1e] hover:text-white transition"
+              onClick={onPageEditToggle}
             >
               <Icon icon="solar:pen-2-broken" width={24} height={24} />
             </button>
             <button
               type="button"
               aria-label="Refresh page"
-              className="p-2 rounded-lg bg-gray-200 text-[#b08b2e] hover:bg-[#b08b2e]/10 transition shadow"
+              className="p-2 rounded-lg text-gray-600 hover:bg-[#b08b2e]/10 transition"
               onClick={onPageRefresh}
             >
               <Icon icon="solar:refresh-circle-broken" width={24} height={24} />
@@ -416,18 +474,23 @@ export const NavBar: React.FC<NavBarProps> = ({
               <Icon icon="solar:close-circle-broken" width={24} height={24} />
               <span className="ml-1">Cancel</span>
             </button>
-            <button
-              type="button"
-              aria-label="Save changes"
-              className="p-2 rounded-lg flex items-center bg-[#b08b2e] text-white hover:bg-[#a07a1e] transition shadow"
-              onClick={onPageSave}
-            >
-              <Icon icon="solar:save-bold" width={24} height={24} />
-              <span className="ml-1">Save</span>
-            </button>
+            {/* Removed save button - save functionality will be handled by individual editors */}
           </div>
         )}
 
+        {context === "settings" && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Logout"
+              className="p-2 rounded-lg text-[#b08b2e] hover:bg-[#a07a1e] hover:text-white transition flex items-center gap-1"
+              onClick={onLogout}
+            >
+              <Icon icon="solar:logout-2-broken" width={24} height={24} />
+              <span className="hidden md:inline">Logout</span>
+            </button>
+          </div>
+        )}
       </div>
     </nav>
   );
