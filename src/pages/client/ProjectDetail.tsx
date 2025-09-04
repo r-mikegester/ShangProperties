@@ -152,11 +152,11 @@ const ProjectDetail = () => {
                                 {/* Avatar Media */}
                                 <div className="group flex flex-col sm:flex-row items-center gap-3 border-b border-gray-200 pb-8 mb-8 text-center sm:text-left">
                                     <a className="block shrink-0 focus:outline-hidden" href="#">
-                                        <img 
-                                          className="size-10 rounded-full mx-auto sm:mx-0" 
-                                          src="https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/VeneziaEspiritu.jpg?w=80&q=80&f=webp" 
-                                          alt="Avatar" 
-                                          loading="lazy"
+                                        <img
+                                            className="size-10 rounded-full mx-auto sm:mx-0"
+                                            src="https://6ovgprfdguxo1bkn.public.blob.vercel-storage.com/VeneziaEspiritu.jpg?w=80&q=80&f=webp"
+                                            alt="Avatar"
+                                            loading="lazy"
                                         />
                                     </a>
                                     <a className="group grow block focus:outline-hidden" href="">
@@ -181,36 +181,36 @@ const ProjectDetail = () => {
                                 <div className="space-y-6">
                                     <h1 className="font-semibold text-2xl sm:text-3xl castoro-titling-regular text-center sm:text-left">Other Projects</h1>
                                     <div className="flex flex-col gap-4 max-w-full py-2">
-                                    {sidebarLoading ? (
-                                        Array.from({ length: 4 }).map((_, idx) => (
-                                            <div key={idx} className="h-20 bg-gray-200 rounded-xl shadow animate-pulse"></div>
-                                        ))
-                                    ) : (
-                                        otherProjects.map((p) => (
-                                            <Link to={`/projects/${p.id}`} key={p.id} className="block">
-                                                <SmoothHoverMenuItem transitionDelayInMs={200}>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
-                                                            <img 
-                                                              src={`${p.image}?w=128&q=80&f=webp`} 
-                                                              alt={p.title} 
-                                                              className="w-full h-full object-cover object-center" 
-                                                              loading="lazy" 
-                                                            />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="text-base sm:text-lg font-semibold text-gray-800 castoro-titling-regular truncate">
-                                                                {p.formalName || p.title}
+                                        {sidebarLoading ? (
+                                            Array.from({ length: 4 }).map((_, idx) => (
+                                                <div key={idx} className="h-20 bg-gray-200 rounded-xl shadow animate-pulse"></div>
+                                            ))
+                                        ) : (
+                                            otherProjects.map((p) => (
+                                                <Link to={`/projects/${p.id}`} key={p.id} className="block">
+                                                    <SmoothHoverMenuItem transitionDelayInMs={200}>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-200 border border-gray-100">
+                                                                <img
+                                                                    src={`${p.image}?w=128&q=80&f=webp`}
+                                                                    alt={p.title}
+                                                                    className="w-full h-full object-cover object-center"
+                                                                    loading="lazy"
+                                                                />
                                                             </div>
-                                                            <div className="text-xs text-gray-500 mt-1 truncate">
-                                                                {p.address || p.project_type}
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="text-base sm:text-lg font-semibold text-gray-800 castoro-titling-regular truncate">
+                                                                    {p.formalName || p.title}
+                                                                </div>
+                                                                <div className="text-xs text-gray-500 mt-1 truncate">
+                                                                    {p.address || p.project_type}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </SmoothHoverMenuItem>
-                                            </Link>
-                                        ))
-                                    )}
+                                                    </SmoothHoverMenuItem>
+                                                </Link>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
                             </div>

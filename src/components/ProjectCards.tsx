@@ -40,27 +40,76 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
     useEffect(() => {
         if (carouselRef.current) {
             carouselRef.current.scrollLeft = initialScroll;
-            checkScrollability();
+            // Use requestAnimationFrame to ensure the DOM is fully rendered
+            requestAnimationFrame(checkScrollability);
         }
     }, [initialScroll]);
+
+    const isMobile = () => {
+        return window && window.innerWidth < 768;
+    };
+
+    // Calculate current index based on scroll position
+    const calculateCurrentIndex = () => {
+        if (!carouselRef.current || items.length === 0) return 0;
+        
+        const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
+        const isMobileView = isMobile();
+        const cardWidth = isMobileView ? 230 : 384;
+        const gap = isMobileView ? 4 : 8;
+        const cardWidthWithGap = cardWidth + gap;
+        
+        // Calculate the maximum scroll position (when last card is fully visible)
+        const maxScrollLeft = scrollWidth - clientWidth;
+        
+        // If we're at the end, return the last index
+        if (scrollLeft >= maxScrollLeft - 1) {
+            return items.length - 1;
+        }
+        
+        // Otherwise calculate based on scroll position
+        return Math.round(scrollLeft / cardWidthWithGap);
+    };
 
     const checkScrollability = () => {
         if (carouselRef.current) {
             const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
-            setCanScrollLeft(scrollLeft > 0);
-            setCanScrollRight(scrollLeft < scrollWidth - clientWidth);
+            // More accurate and robust check for scrollability
+            const threshold = 2; // Small threshold for precision issues
+            
+            // Can scroll left if we're not at the beginning
+            setCanScrollLeft(scrollLeft > threshold);
+            
+            // Can scroll right if we're not at the end
+            setCanScrollRight(scrollWidth - clientWidth - scrollLeft > threshold);
         }
     };
 
     const scrollLeft = () => {
         if (carouselRef.current) {
-            carouselRef.current.scrollBy({ left: -300, behavior: "smooth" });
+            const cardWidth = isMobile() ? 230 : 384; // (md:w-96)
+            const gap = isMobile() ? 4 : 8;
+            carouselRef.current.scrollBy({ left: -(cardWidth + gap), behavior: "smooth" });
+            
+            // Update currentIndex based on new scroll position
+            setTimeout(() => {
+                setCurrentIndex(calculateCurrentIndex());
+                checkScrollability();
+            }, 300);
         }
     };
 
     const scrollRight = () => {
         if (carouselRef.current) {
-            carouselRef.current.scrollBy({ left: 300, behavior: "smooth" });
+            const cardWidth = isMobile() ? 230 : 384; // (md:w-96)
+            const gap = isMobile() ? 4 : 8;
+            carouselRef.current.scrollBy({ left: cardWidth + gap, behavior: "smooth" });
+            
+            // Update currentIndex based on new scroll position
+            setTimeout(() => {
+                setCurrentIndex(calculateCurrentIndex());
+                checkScrollability();
+            }, 300);
         }
     };
 
@@ -77,13 +126,21 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
         }
     };
 
-    const isMobile = () => {
-        return window && window.innerWidth < 768;
-    };
-
     const [hovered, setHovered] = useState<number | null>(null);
     const [sidePadding, setSidePadding] = useState(0);
     const [showTitle, setShowTitle] = useState(true);
+
+    // Check scrollability when items change
+    useEffect(() => {
+        if (carouselRef.current) {
+            // Use a small delay to ensure DOM has updated with new items
+            const timer = setTimeout(() => {
+                checkScrollability();
+                setCurrentIndex(calculateCurrentIndex());
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [items]);
 
     // Dynamically calculate side padding so first/last card can be centered
     useEffect(() => {
@@ -95,26 +152,48 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
             const containerWidth = container.clientWidth;
             const padding = Math.max((containerWidth - cardWidth) / 2, 0);
             setSidePadding(padding);
+            
+            // Check scrollability and update currentIndex when resizing
+            checkScrollability();
+            setCurrentIndex(calculateCurrentIndex());
         }
         updatePadding();
         window.addEventListener('resize', updatePadding);
         return () => window.removeEventListener('resize', updatePadding);
     }, []);
-    function getSidePadding() { return sidePadding; }
 
-    // Show/hide title based on scroll position
+    // Handle scroll events to update button states and title visibility
     useEffect(() => {
-        function onScroll() {
-            if (!carouselRef.current) return;
-            setShowTitle(carouselRef.current.scrollLeft < 20);
+        const carousel = carouselRef.current;
+
+        if (carousel) {
+            const handleScroll = () => {
+                checkScrollability();
+                setShowTitle(carousel.scrollLeft < 20);
+                
+                // Update currentIndex based on scroll position
+                setCurrentIndex(calculateCurrentIndex());
+            };
+
+            carousel.addEventListener('scroll', handleScroll);
+            
+            // Initial check with a small delay to ensure content is loaded
+            const initCheck = setTimeout(() => {
+                checkScrollability();
+                setShowTitle(carousel.scrollLeft < 20);
+                
+                // Set initial currentIndex
+                setCurrentIndex(calculateCurrentIndex());
+            }, 100);
+
+            return () => {
+                carousel.removeEventListener('scroll', handleScroll);
+                clearTimeout(initCheck);
+            };
         }
-        if (carouselRef.current) {
-            carouselRef.current.addEventListener('scroll', onScroll);
-        }
-        return () => {
-            if (carouselRef.current) carouselRef.current.removeEventListener('scroll', onScroll);
-        };
-    }, []);
+    }, [items]);
+
+    function getSidePadding() { return sidePadding; }
 
     return (
         <CarouselContext.Provider
@@ -150,12 +229,11 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
                 <div
                     className="flex w-full h-[60vh] md:h-full bg-[#686058]  overflow-x-scroll overscroll-x-auto scroll-smooth py-10 no-scrollbar md:pb-10"
                     ref={carouselRef}
-                    onScroll={checkScrollability}
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     <div
                         className={cn(
-                            "absolute right-0 z-[1000] h-auto w-[5%] overflow-hidden bg-gradient-to-l",
+                            "absolute right-0 z-[99] h-auto w-[5%] overflow-hidden bg-gradient-to-l",
                         )}
                     ></div>
 
@@ -211,18 +289,18 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
                 </div>
                 {/* Centered Side Arrows */}
                 <button
-                    className="absolute left-5 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white  disabled:opacity-50"
+                    className="absolute left-5 top-1/2 z-[100] flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md disabled:opacity-50"
                     onClick={scrollLeft}
                     disabled={!canScrollLeft}
-                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                    aria-label="Scroll left"
                 >
                     <Icon icon="solar:alt-arrow-left-broken" className="size-10 text-[#B08B2E]" />
                 </button>
                 <button
-                    className="absolute right-5 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white disabled:opacity-50"
+                    className="absolute right-5 top-1/2 z-[100] flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-md disabled:opacity-50"
                     onClick={scrollRight}
                     disabled={!canScrollRight}
-                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                    aria-label="Scroll right"
                 >
                     <Icon icon="solar:alt-arrow-right-broken" className="size-10 text-[#B08B2E]" />
                 </button>
