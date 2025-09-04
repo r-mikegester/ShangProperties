@@ -23,10 +23,15 @@ interface HomepageContent {
     viber: string;
     whatsapp: string;
     telegram: string;
+    headline: string;
+    subheading: string;
+    socialMediaHeading: string;
   };
   // Footer section
   footer: {
     logoUrl: string;
+    kuokGroupLogoUrl: string;
+    corSealUrl: string;
     address: string;
     copyright: string;
     termsUrl: string;
@@ -38,6 +43,7 @@ interface HomepageContent {
     telegram: string;
     email: string;
     links: { label: string; url: string }[];
+    socialLinks: { label: string; url: string; icon: string }[];
     enabled: boolean;
   };
 }
@@ -57,9 +63,14 @@ const initialContent: HomepageContent = {
     viber: "",
     whatsapp: "",
     telegram: "",
+    headline: "",
+    subheading: "",
+    socialMediaHeading: "",
   },
   footer: {
     logoUrl: "",
+    kuokGroupLogoUrl: "",
+    corSealUrl: "",
     address: "",
     copyright: "",
     termsUrl: "",
@@ -71,6 +82,7 @@ const initialContent: HomepageContent = {
     telegram: "",
     email: "",
     links: [],
+    socialLinks: [],
     enabled: true,
   },
 };
@@ -232,7 +244,7 @@ const Homepage: React.FC = () => {
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 my-6 mx-4">
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-700">Inquiry Form</h3>
-                <p className="text-gray-500 mt-2">Contact information will appear here</p>
+                <p className="text-gray-500 mt-2">{content.contact.subheading || "Contact information will appear here"}</p>
                 
                 <div className="mt-4 text-left max-w-2xl mx-auto">
                   <div className="space-y-2">
@@ -241,7 +253,7 @@ const Homepage: React.FC = () => {
                     <p><span className="font-medium">Email:</span> {content.contact.email || "Not set"}</p>
                     
                     <div className="mt-3">
-                      <p className="font-medium">Social Links:</p>
+                      <p className="font-medium">{content.contact.socialMediaHeading || "Social Links"}:</p>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {content.contact.facebook && <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Facebook</span>}
                         {content.contact.instagram && <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Instagram</span>}
@@ -287,11 +299,11 @@ const Homepage: React.FC = () => {
                     <div className="space-y-2">
                       <p className="text-gray-300 text-sm">© {content.footer.copyright || new Date().getFullYear()}</p>
                       <div className="flex flex-wrap gap-2">
-                        {content.footer.facebook && <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">FB</span>}
-                        {content.footer.instagram && <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">IG</span>}
-                        {content.footer.viber && <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">VB</span>}
-                        {content.footer.whatsapp && <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">WA</span>}
-                        {content.footer.telegram && <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">TG</span>}
+                        {content.footer.socialLinks.map((link, idx) => (
+                          <span key={idx} className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">
+                            {link.label}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   </div>

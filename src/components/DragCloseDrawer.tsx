@@ -47,12 +47,14 @@ const DragCloseDrawer = ({
     children,
     drawerHeight = "80vh",
     onClose,
+    disableClose,
 }: {
     open: boolean;
     setOpen: Dispatch<SetStateAction<boolean>>;
     children: ReactNode;
     drawerHeight?: string;
     onClose?: () => void;
+    disableClose?: boolean;
 }) => {
     const [scope, animate] = useAnimate();
     const [drawerRef, { height }] = useMeasure();
