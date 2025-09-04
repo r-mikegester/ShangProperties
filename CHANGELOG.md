@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.11.1](https://github.com/ShangProperties/ShangProperties/compare/v3.11.0...v3.11.1) (2025-09-04)
+
+
+### Bug Fixes
+
+* update @iconify/react dependency to version 6.0.1 ([09615e4](https://github.com/ShangProperties/ShangProperties/commit/09615e4f0e08615df1746528d7ca138c6e54fc0b))
+
 ## [3.11.0](https://github.com/ShangProperties/ShangProperties/compare/v3.10.0...v3.11.0) (2025-09-04)
 
 
