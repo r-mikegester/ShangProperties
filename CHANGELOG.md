@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.11.2](https://github.com/ShangProperties/ShangProperties/compare/v3.11.1...v3.11.2) (2025-09-04)
+
+
+### Bug Fixes
+
+* build update tsconfig moduleResolution to Node10 ([764570d](https://github.com/ShangProperties/ShangProperties/commit/764570df1f3a53845fd3f9ad63444c45968cdfba))
+
 ### [3.11.1](https://github.com/ShangProperties/ShangProperties/compare/v3.11.0...v3.11.1) (2025-09-04)
 
 
