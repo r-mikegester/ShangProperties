@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.11.7](https://github.com/ShangProperties/ShangProperties/compare/v3.11.6...v3.11.7) (2025-09-04)
+
+
+### Bug Fixes
+
+* (admin) enhance homepage footer functionality ([0649bbc](https://github.com/ShangProperties/ShangProperties/commit/0649bbc2ab278f546520a1df77afeee38da3756d))
+* (Homepage): enhance homepage layout and content ([b817666](https://github.com/ShangProperties/ShangProperties/commit/b8176669a0dd2e1aedb45ffd34a65ac78a45ede6))
+
 ### [3.11.6](https://github.com/ShangProperties/ShangProperties/compare/v3.11.5...v3.11.6) (2025-09-04)
 
 
