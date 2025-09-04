@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.9.0](https://github.com/ShangProperties/ShangProperties/compare/v3.8.0...v3.9.0) (2025-09-04)
+
+
+### Features
+
+* build(release) set up automatic versioning and changelog system ([e4259ee](https://github.com/ShangProperties/ShangProperties/commit/e4259ee00c19daed0e1964dd17958d4550d9958b))
+
 ## [3.8.0](https://github.com/ShangProperties/ShangProperties/compare/v3.7.2...v3.8.0) (2025-09-04)
 
 
