@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.12.0](https://github.com/ShangProperties/ShangProperties/compare/v3.11.7...v3.12.0) (2025-09-04)
+
+
+### Features
+
+* (vercel): add Speed Insights component ([0480cb0](https://github.com/ShangProperties/ShangProperties/commit/0480cb0f923341318ae3212eac34d20d69358055))
+* **components:** enhance ProjectCards carousel functionality ([78a1ad4](https://github.com/ShangProperties/ShangProperties/commit/78a1ad49a566b7b4390bb840f842e0bd31ed6f48))
+
 ### [3.11.7](https://github.com/ShangProperties/ShangProperties/compare/v3.11.6...v3.11.7) (2025-09-04)
 
 
