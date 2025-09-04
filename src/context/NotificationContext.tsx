@@ -12,8 +12,9 @@ export type Notification = {
 
 type NotificationContextType = {
   notifications: Notification[];
-  addNotification: (notification: Omit<Notification, "id" | "timestamp" | "read">) => void;
+  addNotification: (notification: Omit<Notification, "id" | "timestamp"> & { id?: string, timestamp?: Date }) => void;
   markAllAsRead: () => void;
+  updateNotification: (id: string, updates: Partial<Notification>) => void;
 };
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -29,24 +30,39 @@ export const useNotification = () => {
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = (notification: Omit<Notification, "id" | "timestamp" | "read">) => {
-    setNotifications((prev) => [
-      {
-        ...notification,
-        id: Math.random().toString(36).substr(2, 9),
-        timestamp: new Date(),
-        read: false,
-      },
-      ...prev,
-    ]);
+  const addNotification = (notification: Omit<Notification, "id" | "timestamp"> & { id?: string, timestamp?: Date }) => {
+    // Check if notification with this ID already exists
+    if (notification.id && notifications.some(n => n.id === notification.id)) {
+      // Update existing notification
+      setNotifications(prev => prev.map(n => 
+        n.id === notification.id ? { ...n, ...notification } as Notification : n
+      ));
+    } else {
+      // Add new notification
+      setNotifications((prev) => [
+        {
+          ...notification,
+          id: notification.id || Math.random().toString(36).substr(2, 9),
+          timestamp: notification.timestamp || new Date(),
+          read: notification.read || false,
+        } as Notification,
+        ...prev,
+      ]);
+    }
   };
 
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  const updateNotification = (id: string, updates: Partial<Notification>) => {
+    setNotifications((prev) => 
+      prev.map((n) => n.id === id ? { ...n, ...updates } : n)
+    );
+  };
+
   return (
-    <NotificationContext.Provider value={{ notifications, addNotification, markAllAsRead }}>
+    <NotificationContext.Provider value={{ notifications, addNotification, markAllAsRead, updateNotification }}>
       {children}
     </NotificationContext.Provider>
   );

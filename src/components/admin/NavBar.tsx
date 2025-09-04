@@ -1,9 +1,10 @@
 import { Icon } from "@iconify/react";
-import React, { useRef, useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import NotificationCenter from "./NotificationCenter";
 import { useNotification } from "../../context/NotificationContext";
 import { useDashboardStats } from "../../context/DashboardStatsContext";
-import { motion, AnimatePresence } from "framer-motion";
 
 const PAGE_TITLES: Record<string, string> = {
   "/Admin": "Dashboard",
@@ -216,70 +217,58 @@ export const NavBar: React.FC<NavBarProps> = ({
                 )}
               </button>
 
-              {/* Notification Dropdown */}
+              {/* Sliding Notification Panel */}
               <AnimatePresence>
                 {notifOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    transition={{ duration: 0.18, type: "spring", stiffness: 300, damping: 30 }}
-                    className="fixed md:absolute left-1/2 md:left-auto md:right-0 transform -translate-x-1/2 md:transform-none mt-2 w-full max-w-xs bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden z-50"
-                    style={{ minWidth: 320, maxHeight: 'calc(100vh - 100px)' }}
-                  >
-                    <div className="p-4 border-b border-slate-100 font-semibold text-slate-700 bg-slate-50 flex items-center justify-between">
-                      <span>Notifications</span>
-                      <button
-                        className="text-xs text-blue-600 hover:underline ml-2 px-2 py-1 rounded"
-                        onClick={markAllAsRead}
-                        disabled={notifications.every(n => n.read)}
-                      >
-                        Mark all as read
-                      </button>
-                    </div>
-                    <ul className="max-h-80 md:max-h-96 overflow-y-auto divide-y divide-slate-100">
-                      {notifications.length === 0 && (
-                        <li className="p-4 text-center text-slate-400">No notifications</li>
-                      )}
-                      {notifications.map((n) => (
-                        <li
-                          key={n.id}
-                          className={`flex items-start gap-3 px-4 py-3 transition-colors duration-200 ${!n.read ? "bg-slate-50" : ""} cursor-pointer hover:bg-slate-100`}
-                          onClick={() => {
-                            // Mark as read
-                            const updatedNotifications = notifications.map(notif =>
-                              notif.id === n.id ? { ...notif, read: true } : notif
-                            );
-
-                            // Navigate to inquiries page
-                            navigate("/inquiries");
-
-                            // If it's an inquiry notification, send event to open the inquiry
-                            if (n.type === "inquiry" && n.inquiryId) {
-                              // Dispatch a custom event with the inquiry ID
-                              window.dispatchEvent(new CustomEvent('openInquiry', { detail: n.inquiryId }));
-                            }
-
-                            // Close the notification dropdown
-                            setNotifOpen(false);
-                          }}
-                        >
-                          <span className="mt-1">
-                            {n.type === "success" && <Icon icon="mdi:check-circle" className="text-green-500" width={20} />}
-                            {n.type === "error" && <Icon icon="mdi:alert-circle" className="text-red-500" width={20} />}
-                            {n.type === "warning" && <Icon icon="mdi:alert" className="text-yellow-500" width={20} />}
-                            {n.type === "info" && <Icon icon="mdi:information" className="text-blue-500" width={20} />}
-                            {n.type === "inquiry" && <Icon icon="mdi:email" className="text-purple-500" width={20} />}
-                          </span>
-                          <div className="flex-1">
-                            <div className="font-medium text-slate-800 text-sm mb-1">{n.title}</div>
-                            <div className="text-xs text-slate-600 mb-1">{n.message}</div>
-                            <div className="text-[10px] text-slate-400">{n.timestamp.toLocaleString()}</div>
+                  <>
+                    <motion.div
+                      className="fixed inset-0 z-[4000] bg-black/40"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setNotifOpen(false)}
+                    />
+                    <motion.div
+                      className="fixed right-0 top-0 w-full md:w-[90vw] lg:w-[70vw] xl:w-[60vw] h-full bg-white shadow-2xl flex flex-col max-h-screen overflow-hidden z-[4001]"
+                      initial={{ x: '100%', opacity: 0.5 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: '100%', opacity: 0.5 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    >
+                      <div className="flex items-center justify-between gap-3 p-4 border-b border-gray-200 bg-gradient-to-br from-[#b08b2e]/10 to-[#b08b2e]/30">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-[#b08b2e]/50 rounded-lg">
+                            <Icon icon="mdi:bell" width="24" height="24" className="text-white" />
                           </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </motion.div>
+                          <div>
+                            <h2 className="text-xl font-semibold text-slate-800">Notifications</h2>
+                            <p className="text-slate-600 text-sm">
+                              {unreadCount} unread {unreadCount === 1 ? 'notification' : 'notifications'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {unreadCount > 0 && (
+                            <button 
+                              onClick={markAllAsRead}
+                              className="px-3 py-1 text-sm bg-[#b08b2e]/20 hover:bg-[#b08b2e]/30 rounded-lg text-[#b08b2e] transition-colors"
+                            >
+                              Mark all as read
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => setNotifOpen(false)}
+                            className="p-2 rounded-full hover:bg-gray-100 text-gray-500"
+                          >
+                            <Icon icon="mdi:close" width="24" height="24" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex-1 overflow-y-auto">
+                        <NotificationCenter />
+                      </div>
+                    </motion.div>
+                  </>
                 )}
               </AnimatePresence>
             </div>

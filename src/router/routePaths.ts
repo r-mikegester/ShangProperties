@@ -14,6 +14,7 @@ export const ADMIN_DASHBOARD_ROUTE = "/Admin/Dashboard";
 export const ADMIN_PROJECTS_ROUTE = "/Admin/Projects";
 export const ADMIN_PROJECTS_ARCHIVE_ROUTE = "/Admin/Projects/Archive";
 export const ADMIN_INQUIRIES_ROUTE = "/Admin/Inquiries";
+export const ADMIN_NOTIFICATIONS_ROUTE = "/Admin/Notifications";
 export const ADMIN_PAGE_MANAGEMENT_ROUTE = "/Admin/PageManagement";
 export const ADMIN_SETTINGS_ROUTE = "/Admin/Settings";
 export const ADMIN_ERROR_TEST_ROUTE = "/Admin/ErrorTest";
@@ -24,6 +25,7 @@ export const ROUTE_PATHS = {
   ADMIN_PROJECTS: "/Admin/Projects",
   ADMIN_PROJECTS_ARCHIVE: "/Admin/Projects/Archive",
   ADMIN_INQUIRIES: "/Admin/Inquiries",
+  ADMIN_NOTIFICATIONS: "/Admin/Notifications",
   ADMIN_PAGE_MANAGEMENT: "/Admin/PageManagement",
   ADMIN_SETTINGS: "/Admin/Settings",
   ADMIN_ERROR_TEST: "/Admin/ErrorTest",

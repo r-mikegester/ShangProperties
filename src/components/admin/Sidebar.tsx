@@ -3,27 +3,33 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { ROUTE_PATHS } from "../../router/routePaths";
+import { useNotification } from "../../context/NotificationContext";
 
 const sidebarLinks = [
   {
     title: "Dashboard",
     icon: "solar:chat-square-2-broken",
-    path: ROUTE_PATHS.ADMIN_DASHBOARD,
+    path: "/Admin/Dashboard",
   },
   {
     title: "Inquiries",
     icon: "solar:letter-broken",
-    path: ROUTE_PATHS.ADMIN_INQUIRIES,
+    path: "/Admin/Inquiries",
+  },
+  {
+    title: "Notifications",
+    icon: "solar:bell-broken",
+    path: "/Admin/Notifications",
   },
   {
     title: "Projects",
     icon: "solar:inbox-archive-broken",
-    path: ROUTE_PATHS.ADMIN_PROJECTS,
+    path: "/Admin/Projects",
   },
   {
     title: "Page Management",
     icon: "solar:feed-broken",
-    path: ROUTE_PATHS.ADMIN_PAGE_MANAGEMENT,
+    path: "/Admin/PageManagement",
   },
   // {
   //   title: "Settings",
@@ -33,7 +39,7 @@ const sidebarLinks = [
   {
     title: "Error Test",
     icon: "solar:danger-triangle-broken",
-    path: ROUTE_PATHS.ADMIN_ERROR_TEST,
+    path: "/Admin/ErrorTest",
   },
 ];
 
@@ -150,7 +156,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="flex flex-col gap-1 mb-2">
           <SmoothHoverMenuItem>
             <NavLink
-              to={ROUTE_PATHS.ADMIN_SETTINGS}
+              to={"/Admin/Settings"}
               className={
                 open
                   ? "relative flex h-10 w-full items-center rounded-md px-2 transition-colors text-[#b08b2e]"
