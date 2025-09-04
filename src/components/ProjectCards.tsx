@@ -172,6 +172,7 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
                                 layout
                                 onMouseEnter={() => setHovered(index)}
                                 onMouseLeave={() => setHovered(null)}
+                                initial={{ filter: "brightness(1)", zIndex: 10 }}
                                 animate={
                                     hovered === null
                                         ? { filter: "brightness(1)", zIndex: 10 }
