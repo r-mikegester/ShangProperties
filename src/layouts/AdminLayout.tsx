@@ -1,221 +1,243 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { Icon } from "@iconify/react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useNotification } from "../context/NotificationContext";
-import { useDashboardStats } from "../context/DashboardStatsContext";
 import Sidebar from "../components/admin/Sidebar";
 import Dock from "../components/admin/Dock";
 import NavBar from "../components/admin/NavBar";
-import { useAdminToolbar } from "../context/AdminToolbarContext";
+import InquirySocketListener from "../components/admin/InquirySocketListener";
+import { useNotification } from "../context/NotificationContext";
+import { onSnapshot, collection, query, orderBy, limit } from "firebase/firestore";
+import { db } from "../firebase/firebase";
+import { useDashboardStats } from "../context/DashboardStatsContext";
+import useIsMobile from "../hooks/useIsMobile";
+import { getAuth, signOut } from "firebase/auth";
+import { addDoc, serverTimestamp, collection as firestoreCollection } from "firebase/firestore";
+import { toast } from "react-toastify";
 
-function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < breakpoint);
-  React.useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < breakpoint);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
-  }, [breakpoint]);
-  return isMobile;
-}
-
-export const AdminLayout: React.FC = () => {
+const AdminLayout: React.FC = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-  const { notifications, markAllAsRead } = useNotification();
+  const { addNotification } = useNotification();
   const { refreshDashboard } = useDashboardStats();
-  const { state: toolbarState } = useAdminToolbar();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const notifDropdownRef = useRef<HTMLDivElement>(null);
-  const menuDropdownRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile(768);
+  
+  // State for projects
   const [isProjectArchive, setIsProjectArchive] = useState(false);
+  const [isProjectAddMode, setIsProjectAddMode] = useState(false);
+  const [projectsViewMode, setProjectsViewMode] = useState<"grid" | "list">(() => {
+    // Get view mode from localStorage or default to "grid"
+    const savedViewMode = localStorage.getItem("projectsViewMode");
+    return savedViewMode === "list" ? "list" : "grid";
+  });
+  
+  // State for inquiries
   const [isInquiriesArchive, setIsInquiriesArchive] = useState(false);
   const [isInquiriesEditMode, setIsInquiriesEditMode] = useState(false);
   const [selectedInquiriesCount, setSelectedInquiriesCount] = useState(0);
+
+  // State for page management
   const [isPageEditing, setIsPageEditing] = useState(false);
-  const isMobile = useIsMobile();
 
-  // Close dropdowns on outside click
+  // Auto-collapse sidebar on mobile
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
-        setNotifOpen(false);
-      }
-      if (menuDropdownRef.current && !menuDropdownRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    if (notifOpen || menuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+    if (isMobile) {
+      setSidebarOpen(false);
     } else {
-      document.removeEventListener("mousedown", handleClickOutside);
+      setSidebarOpen(true);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [notifOpen, menuOpen]);
+  }, [isMobile]);
 
-  // Determine current context
-  const context = location.pathname.startsWith("/dashboard/projects") || location.pathname.startsWith("/admin/projects")
+  // Save view mode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("projectsViewMode", projectsViewMode);
+  }, [projectsViewMode]);
+
+  // Determine page context based on location
+  const context = location.pathname.startsWith("/Admin/Projects")
     ? "projects"
-    : location.pathname.startsWith("/dashboard/inquiries") || location.pathname.startsWith("/admin/inquiries")
-    ? "inquiries"
-    : location.pathname.startsWith("/dashboard/page-management") || location.pathname.startsWith("/admin/page-management")
-    ? "page-management"
-    : location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/admin")
-    ? "dashboard"
-    : "other";
+    : location.pathname.startsWith("/Admin/Inquiries")
+      ? "inquiries"
+      : location.pathname.startsWith("/Admin/PageManagement")
+        ? "page-management"
+        : "dashboard";
 
-  // Update archive state when location changes
+  // Debug: Log context changes
+  React.useEffect(() => {
+    console.log(`[AdminLayout] Context determined: ${context}`);
+  }, [context]);
+
+  // Listen for new inquiries
   useEffect(() => {
-    if (context === "projects") {
-      const params = new URLSearchParams(location.search);
-      setIsProjectArchive(params.get("archived") === "true");
-    } else if (context === "inquiries") {
-      const params = new URLSearchParams(location.search);
-      setIsInquiriesArchive(params.get("archived") === "true");
+    console.log('[AdminLayout] Setting up inquiry listener');
+    
+    // First get all recent inquiries ordered by timestamp
+    const q = query(
+      collection(db, "inquiries"),
+      orderBy("timestamp", "desc"),
+      limit(10) // Get more than 1 to ensure we catch unread ones
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log(`[AdminLayout] Received snapshot with ${snapshot.size} inquiries`);
+      
+      // Filter for unread inquiries on the client side
+      const unreadChanges = snapshot.docChanges().filter(change => 
+        change.type === "added" && change.doc.data().status === "unread"
+      );
+      
+      // Process only the first unread inquiry to avoid duplicates
+      if (unreadChanges.length > 0) {
+        const change = unreadChanges[0];
+        const inquiryData = change.doc.data();
+        console.log(`[AdminLayout] New unread inquiry from ${inquiryData.name}`);
+        
+        addNotification({
+          type: "inquiry",
+          title: "New Inquiry",
+          message: `New inquiry from ${inquiryData.name}`,
+          inquiryId: change.doc.id,
+        });
+
+        // Refresh dashboard stats when new inquiry arrives
+        refreshDashboard();
+      }
+    });
+
+    return () => {
+      console.log('[AdminLayout] Unsubscribing from inquiry listener');
+      unsubscribe();
+    };
+  }, [addNotification, refreshDashboard]);
+
+  // Handle inquiry opening from notification
+  useEffect(() => {
+    console.log('[AdminLayout] Setting up openInquiry event listener');
+    
+    const handleOpenInquiry = (event: CustomEvent) => {
+      const inquiryId = event.detail;
+      console.log(`[AdminLayout] Opening inquiry: ${inquiryId}`);
+      navigate(`/Admin/Inquiries?open=${inquiryId}`);
+    };
+
+    window.addEventListener('openInquiry', handleOpenInquiry as EventListener);
+    return () => {
+      console.log('[AdminLayout] Removing openInquiry event listener');
+      window.removeEventListener('openInquiry', handleOpenInquiry as EventListener);
+    };
+  }, [navigate]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    console.log('[AdminLayout] Initiating logout');
+    
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      // Log the logout event
+      if (user) {
+        console.log(`[AdminLayout] Recording logout event for user: ${user.email}`);
+        await addDoc(firestoreCollection(db, "adminLogs"), {
+          type: "logout",
+          userId: user.uid,
+          email: user.email,
+          timestamp: serverTimestamp(),
+          userAgent: navigator.userAgent
+        });
+      }
+      
+      await signOut(auth);
+      console.log('[AdminLayout] Logout successful');
+      toast.success("Logged out successfully");
+      navigate("/");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Failed to log out");
     }
-  }, [location, context]);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  // Handle project archive toggle
-  const handleProjectToggleArchive = () => {
-    const params = new URLSearchParams(location.search);
-    if (isProjectArchive) {
-      params.delete("archived");
-    } else {
-      params.set("archived", "true");
-    }
-    navigate(`${location.pathname}?${params.toString()}`);
-    // Dispatch event for Projects component
-    window.dispatchEvent(new CustomEvent('projectToggleArchiveRequested'));
   };
 
-  // Handle inquiries archive toggle
-  const handleInquiriesToggleArchive = () => {
-    const params = new URLSearchParams(location.search);
-    if (isInquiriesArchive) {
-      params.delete("archived");
-    } else {
-      params.set("archived", "true");
-    }
-    navigate(`${location.pathname}?${params.toString()}`);
+  // Prepare context value for child components
+  const outletContext = {
+    // Projects context
+    isProjectArchive,
+    setIsProjectArchive,
+    isProjectAddMode,
+    setIsProjectAddMode,
+    projectsViewMode,
+    setProjectsViewMode,
+    
+    // Inquiries context
+    isInquiriesArchive,
+    setIsInquiriesArchive,
+    isInquiriesEditMode,
+    setIsInquiriesEditMode,
+    selectedInquiriesCount,
+    setSelectedInquiriesCount,
+    
+    // Page management context
+    isPageEditing,
+    setIsPageEditing,
   };
-
-  // Handle inquiries archive view toggle (for the button in the content area)
-  const handleInquiriesArchiveViewToggle = () => {
-    setIsInquiriesArchive(!isInquiriesArchive);
-    // Update URL params as well
-    const params = new URLSearchParams(location.search);
-    if (isInquiriesArchive) {
-      params.delete("archived");
-    } else {
-      params.set("archived", "true");
-    }
-    navigate(`${location.pathname}?${params.toString()}`);
-  };
-
-  // Functions to handle mass operations - these will be called from NavBar
-  const handleInquiriesMassArchive = () => {
-    // This will be handled by the Inquiries component through context
-    // We're just triggering the state change here
-    console.log("Mass archive requested from NavBar");
-    // Dispatch a custom event that the Inquiries component can listen to
-    window.dispatchEvent(new CustomEvent('inquiriesMassArchive'));
-  };
-
-  const handleInquiriesMassDelete = () => {
-    // This will be handled by the Inquiries component through context
-    // We're just triggering the state change here
-    console.log("Mass delete requested from NavBar");
-    // Dispatch a custom event that the Inquiries component can listen to
-    window.dispatchEvent(new CustomEvent('inquiriesMassDelete'));
-  };
-
-  // Handle page edit mode toggle
-  const handlePageEditToggle = () => {
-    setIsPageEditing(!isPageEditing);
-  };
-
-  // Handle page save
-  const handlePageSave = () => {
-    // Dispatch a custom event that the PageManagement component can listen to
-    window.dispatchEvent(new CustomEvent('pageSaveRequested'));
-    setIsPageEditing(false);
-  };
-
-  // Handle page cancel
-  const handlePageCancel = () => {
-    // Dispatch a custom event that the PageManagement component can listen to
-    window.dispatchEvent(new CustomEvent('pageCancelRequested'));
-    setIsPageEditing(false);
-  };
-
-  // Handle page refresh
-  const handlePageRefresh = () => {
-    // Dispatch a custom event that the PageManagement component can listen to
-    window.dispatchEvent(new CustomEvent('pageRefreshRequested'));
-  };
-
-  // Handle project add
-  const handleProjectAdd = () => {
-    // Dispatch a custom event that the Projects component can listen to
-    window.dispatchEvent(new CustomEvent('projectAddRequested'));
-  };
+  
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {!isMobile && <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <NavBar
-          toolbarActions={undefined}
-          onRefresh={refreshDashboard}
-          onProjectToggleArchive={handleProjectToggleArchive}
-          onProjectAdd={handleProjectAdd}
+    <div className="flex h-screen" data-component="AdminLayout">
+      
+      {/* Sidebar - hidden on mobile, shown on desktop */}
+      {!isMobile && (
+        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* NavBar */}
+        <NavBar 
           isProjectArchive={isProjectArchive}
-          onInquiriesArchive={handleInquiriesToggleArchive}
+          onProjectToggleArchive={() => setIsProjectArchive(!isProjectArchive)}
+          onProjectAdd={() => setIsProjectAddMode(true)}
+          onViewModeToggle={() => setProjectsViewMode(prev => prev === "grid" ? "list" : "grid")}
+          viewMode={projectsViewMode}
           isInquiriesArchiveView={isInquiriesArchive}
+          onInquiriesArchive={() => setIsInquiriesArchive(!isInquiriesArchive)}
           isInquiriesEditMode={isInquiriesEditMode}
+          onInquiriesEdit={() => setIsInquiriesEditMode(!isInquiriesEditMode)}
           selectedInquiriesCount={selectedInquiriesCount}
-          onInquiriesEdit={() => setIsInquiriesEditMode(true)}
           onInquiriesCancelEdit={() => {
             setIsInquiriesEditMode(false);
             setSelectedInquiriesCount(0);
           }}
-          onInquiriesMassArchive={handleInquiriesMassArchive}
-          onInquiriesMassDelete={handleInquiriesMassDelete}
-          // Additional props for the archive view and edit mode toggles
-          onInquiriesArchiveViewToggle={handleInquiriesArchiveViewToggle}
-          isInquiriesArchiveViewState={isInquiriesArchive}
-          onInquiriesEditModeToggle={() => setIsInquiriesEditMode(!isInquiriesEditMode)}
-          isInquiriesEditModeActive={isInquiriesEditMode}
-          // Page management props
+          onLogout={handleLogout}
           isPageEditing={isPageEditing}
-          onPageEditToggle={handlePageEditToggle}
-          onPageSave={handlePageSave}
-          onPageCancel={handlePageCancel}
-          onPageRefresh={handlePageRefresh}
+          onPageEditToggle={() => setIsPageEditing(!isPageEditing)}
+          onPageCancel={() => {
+            setIsPageEditing(false);
+            // Dispatch event to PageManagement component
+            window.dispatchEvent(new CustomEvent('pageCancelRequested'));
+          }}
+          onPageSave={() => {
+            // Dispatch event to PageManagement component
+            window.dispatchEvent(new CustomEvent('pageSaveRequested'));
+            setIsPageEditing(false);
+          }}
+          onPageRefresh={() => {
+            // Dispatch event to PageManagement component
+            window.dispatchEvent(new CustomEvent('pageRefreshRequested'));
+          }}
         />
-        <main className="flex-1 overflow-y-auto">
-          <Outlet context={{
-            isProjectArchive,
-            setIsProjectArchive,
-            isInquiriesArchive,
-            setIsInquiriesArchive,
-            isInquiriesEditMode,
-            setIsInquiriesEditMode,
-            selectedInquiriesCount,
-            setSelectedInquiriesCount,
-            isPageEditing,
-            setIsPageEditing
-          }} />
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-slate-50">
+          <div className="max-w-full mx-auto h-full">
+            <Outlet context={outletContext} />
+          </div>
         </main>
       </div>
+
+      {/* Mobile Dock Navigation */}
       {isMobile && <Dock />}
-      <ToastContainer position="bottom-right" />
+
+      {/* Socket Listener for Real-time Updates */}
+      <InquirySocketListener />
     </div>
   );
 };

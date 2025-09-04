@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDashboardStats } from "../../context/DashboardStatsContext";
 import { collection, getDocs, query, orderBy, limit, where } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
@@ -23,6 +24,8 @@ const VERCEL_ANALYTICS_TOKEN = "VKIv2CJK6FiJ8Q39DYtU8kis";
 const VERCEL_PROJECT_ID = "shangproperties"; // Change if your project id is different
 
 const Dashboard: React.FC = () => {
+  
+  const navigate = useNavigate();
   const [totalInquiries, setTotalInquiries] = useState<number>(0);
   const [unreadInquiries, setUnreadInquiries] = useState<number>(0);
   const [recentInquiries, setRecentInquiries] = useState<any[]>([]);
@@ -34,12 +37,19 @@ const Dashboard: React.FC = () => {
 
   // Fetch Firestore inquiries stats
   const fetchInquiries = useCallback(async () => {
-    const q = query(collection(db, "inquiries"), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(q);
-    const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setTotalInquiries(all.length);
-    setUnreadInquiries(all.filter((i: any) => !i.read).length);
-    setRecentInquiries(all.slice(0, 7));
+    try {
+      const q = query(collection(db, "inquiries"), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
+      const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTotalInquiries(all.length);
+      setUnreadInquiries(all.filter((i: any) => !i.read).length);
+      setRecentInquiries(all.slice(0, 7));
+    } catch (error) {
+      console.error("Error fetching inquiries:", error);
+      setTotalInquiries(0);
+      setUnreadInquiries(0);
+      setRecentInquiries([]);
+    }
   }, []);
 
   // Fetch Vercel Analytics
@@ -59,7 +69,12 @@ const Dashboard: React.FC = () => {
       }
       setVisitsData({ labels, data });
     } catch (err) {
-      setVisitsData({ labels: [], data: [] });
+      console.error("Error fetching analytics:", err);
+      // Provide default data when API is not available
+      setVisitsData({ 
+        labels: ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"], 
+        data: [0, 0, 0, 0, 0, 0, 0] 
+      });
     } finally {
       setLoading(false);
     }
@@ -67,6 +82,7 @@ const Dashboard: React.FC = () => {
 
   // Initial fetch
   useEffect(() => {
+    
     fetchInquiries();
     fetchVisits();
   }, [fetchInquiries, fetchVisits]);
@@ -83,7 +99,10 @@ const Dashboard: React.FC = () => {
     <div className=" max-w-full w-full p-3 pb-20 md:pb-3 box-border">
       <div className="grid grid-cols-2 md:grid-cols-6 grid-rows-[2rem,auto,auto,auto] gap-4 min-h-0 md:h-screen">
         {/* 1 */}
-        <div className="bg-white rounded-lg shadow p-3 flex flex-row items-center justify-between cols-span-1 md:col-span-2 row-span-1">
+        <div 
+          className="bg-white rounded-lg shadow p-3 flex flex-row items-center justify-between cols-span-1 md:col-span-2 row-span-1 cursor-pointer hover:bg-slate-50 transition-colors"
+          onClick={() => navigate("/Admin/Inquiries")}
+        >
           <div className="flex items-center justify-center space-x-3">
             <Icon icon="solar:letter-broken" className="size-10" />
             <div className="text-slate-600 hidden md:flex text-xl">Total Inquiries</div>
@@ -91,13 +110,15 @@ const Dashboard: React.FC = () => {
           <div className="text-4xl font-bold text-[#b08b2e]">{totalInquiries}</div>
         </div>
         {/* 2 */}
-        <div className="bg-white rounded-lg shadow p-3 flex flex-row items-center justify-between col-span-1 md:col-span-2 row-span-1">
+        <div 
+          className="bg-white rounded-lg shadow p-3 flex flex-row items-center justify-between col-span-1 md:col-span-2 row-span-1 cursor-pointer hover:bg-slate-50 transition-colors"
+          onClick={() => navigate("/Admin/Inquiries?unread=true")}
+        >
           <div className="flex items-center justify-center space-x-3">
             <Icon icon="solar:letter-unread-broken" className="size-10" />
             <div className="text-slate-600 hidden md:flex text-xl">Unread Inquiries</div>
           </div>
           <div className="text-4xl font-bold text-red-500">{unreadInquiries}</div>
-
         </div>
         {/* 5: Recent Inquiries */}
         <div className="bg-white rounded-lg shadow p-6 col-span-2 row-span-2 h-96 md:h-full md:row-span-4 flex flex-col">

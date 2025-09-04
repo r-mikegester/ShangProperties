@@ -7,6 +7,7 @@ export type Notification = {
   message: string;
   timestamp: Date;
   read?: boolean;
+  inquiryId?: string; // Add inquiryId property
 };
 
 type NotificationContextType = {
