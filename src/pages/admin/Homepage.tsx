@@ -36,11 +36,6 @@ interface HomepageContent {
     copyright: string;
     termsUrl: string;
     privacyUrl: string;
-    facebook: string;
-    instagram: string;
-    viber: string;
-    whatsapp: string;
-    telegram: string;
     email: string;
     links: { label: string; url: string }[];
     socialLinks: { label: string; url: string; icon: string }[];
@@ -75,11 +70,6 @@ const initialContent: HomepageContent = {
     copyright: "",
     termsUrl: "",
     privacyUrl: "",
-    facebook: "",
-    instagram: "",
-    viber: "",
-    whatsapp: "",
-    telegram: "",
     email: "",
     links: [],
     socialLinks: [],
@@ -297,20 +287,70 @@ const Homepage: React.FC = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Legal & Social</h3>
                     <div className="space-y-2">
+                      {/* Copyright */}
                       <p className="text-gray-300 text-sm">© {content.footer.copyright || new Date().getFullYear()}</p>
+                      
+                      {/* Terms and Privacy Links */}
+                      <div className="flex flex-wrap gap-3">
+                        {content.footer.termsUrl && (
+                          <a href={content.footer.termsUrl} className="text-gray-300 text-sm hover:text-[#b08b2e]">
+                            Terms of Service
+                          </a>
+                        )}
+                        {content.footer.privacyUrl && (
+                          <a href={content.footer.privacyUrl} className="text-gray-300 text-sm hover:text-[#b08b2e]">
+                            Privacy Policy
+                          </a>
+                        )}
+                      </div>
+                      
+                      {/* Email */}
+                      {content.footer.email && (
+                        <p className="text-gray-300 text-sm">
+                          <span className="font-medium">Email:</span> {content.footer.email}
+                        </p>
+                      )}
+                      
+                      {/* Social Links */}
                       <div className="flex flex-wrap gap-2">
                         {content.footer.socialLinks.map((link, idx) => (
-                          <span key={idx} className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded">
-                            {link.label}
-                          </span>
+                          <a 
+                            key={idx} 
+                            href={link.url}
+                            className="flex items-center gap-1 bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded hover:bg-[#b08b2e] hover:text-white transition-colors"
+                          >
+                            {/* In a real implementation, the icon would be rendered here */}
+                            <span>{link.label}</span>
+                          </a>
                         ))}
                       </div>
                     </div>
                   </div>
                 </div>
                 
+                {/* Additional Footer Elements */}
                 <div className="border-t border-gray-700 mt-6 pt-4 text-center text-gray-400 text-sm">
-                  <p>Additional footer elements would appear here (Kuok Group logo, COR seal, etc.)</p>
+                  <div className="flex flex-col items-center space-y-3">
+                    {/* Logo */}
+                    {content.footer.logoUrl && (
+                      <img src={content.footer.logoUrl} alt="Footer logo" className="h-10" />
+                    )}
+                    
+                    {/* Kuok Group Logo and COR Seal */}
+                    <div className="flex gap-4">
+                      {content.footer.kuokGroupLogoUrl && (
+                        <img src={content.footer.kuokGroupLogoUrl} alt="Kuok Group logo" className="h-8" />
+                      )}
+                      {content.footer.corSealUrl && (
+                        <img src={content.footer.corSealUrl} alt="COR Seal" className="h-8" />
+                      )}
+                    </div>
+                    
+                    {/* Address */}
+                    {content.footer.address && (
+                      <p className="text-gray-400 text-sm mt-2">{content.footer.address}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
