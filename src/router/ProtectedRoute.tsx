@@ -18,10 +18,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedEmails
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
-      if (!firebaseUser || !allowedEmails.includes(firebaseUser.email || "")) {
+      
+      // Debug logging
+      console.log("Auth state changed:", firebaseUser);
+      console.log("Allowed emails:", allowedEmails);
+      
+      if (!firebaseUser) {
+        console.log("No user authenticated, redirecting to home");
         navigate("/", { replace: true });
+      } else if (!allowedEmails.includes(firebaseUser.email || "")) {
+        console.log("User not authorized, redirecting to home");
+        console.log("User email:", firebaseUser.email);
+        navigate("/", { replace: true });
+      } else {
+        console.log("User authorized, allowing access");
       }
     });
+    
     return () => unsubscribe();
   }, [allowedEmails, navigate]);
 
@@ -29,7 +42,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedEmails
     return <LoadingScreen />;
   }
 
-  // If user is not allowed, nothing will render due to redirect
+  // Check if user is authenticated and authorized
+  if (!user || !allowedEmails.includes(user.email || "")) {
+    // Redirect already handled in useEffect
+    return null;
+  }
+
+  // If user is allowed, render children
   return <>{children}</>;
 };
 

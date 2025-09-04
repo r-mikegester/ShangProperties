@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../../firebase/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "../../firebase/firebase";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 const provider = new GoogleAuthProvider();
 
@@ -14,10 +16,30 @@ const Login = () => {
     setError("");
     setLoading(true);
     try {
-      await signInWithPopup(auth, provider);
-      navigate("/dashboard");
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      console.log("User signed in:", user);
+      
+      // Log the login event
+      await addDoc(collection(db, "adminLogs"), {
+        type: "login",
+        userId: user.uid,
+        email: user.email,
+        timestamp: serverTimestamp(),
+        userAgent: navigator.userAgent
+      });
+      
+      // Show success message
+      toast.success("Login successful!");
+      
+      // Redirect to admin dashboard after successful login
+      console.log("Redirecting to dashboard...");
+      navigate("/Admin/Dashboard");
     } catch (err: any) {
+      console.error("Login error:", err);
       setError(err.message || "Login failed");
+      toast.error("Login failed: " + (err.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -36,6 +58,10 @@ const Login = () => {
           {loading ? "Signing in..." : "Sign in with Google"}
         </button>
         {error && <div className="text-red-500 text-sm text-center mb-2">{error}</div>}
+        <div className="mt-4 text-sm text-gray-500 text-center">
+          <p>Make sure you're using an authorized admin email address.</p>
+          <p className="mt-2">Current authorized emails: guidetoshangproperties@gmail.com</p>
+        </div>
       </div>
     </div>
   );

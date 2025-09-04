@@ -1,14 +1,72 @@
-import React, { RefObject, useState, useRef } from "react";
+import React, { RefObject, useState, useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
-import bgimg from "../../assets/imgs/banners/HeroBanner.webp";
+import { db } from "../../firebase/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 interface HeroProps {
   imageRef: RefObject<HTMLImageElement | null>;
 }
 
 const Hero: React.FC<HeroProps> = ({ imageRef }) => {
-  // Long paragraph text
-  const fullText = `Shang Properties, Inc. (SPI) has been involved in property investment and development in the Philippines since 1987 and was listed on the Philippine Stock Exchange (PSE) in 1991. Shang Properties’ core businesses are office and retail leasing and residential development, as guided by its vision to be the leading developer and manager of prime properties in the Philippines.`;
+  const [heroContent, setHeroContent] = useState({
+    backgroundUrl: "",
+    headline: "Curating Spaces <br className=\"hidden xs:block\" /> as Fine As You.",
+    paragraph: "Shang Properties, Inc. (SPI) has been involved in property investment and development in the Philippines since 1987 and was listed on the Philippine Stock Exchange (PSE) in 1991. Shang Properties' core businesses are office and retail leasing and residential development, as guided by its vision to be the leading developer and manager of prime properties in the Philippines."
+  });
+  
+  const [loading, setLoading] = useState(true);
+  
+  // Default base URL for background images
+  const DEFAULT_BASE_URL = "https://6ovgprfdguxo1bkn.public.blob.vercel-storage.com/";
+  // Default hero background image - using a working image from the project
+  const DEFAULT_HERO_BG = "https://6ovgprfdguxo1bkn.public.blob.vercel-storage.com/HeroBanner.webp";
+
+  useEffect(() => {
+    // Listen for real-time updates from Firestore
+    const unsubscribe = onSnapshot(
+      doc(db, "homepage", "content"),
+      (doc) => {
+        if (doc.exists()) {
+          const data = doc.data();
+          if (data.hero) {
+            setHeroContent({
+              backgroundUrl: data.hero.backgroundUrl || "",
+              headline: data.hero.headline || "Curating Spaces <br className=\"hidden xs:block\" /> as Fine As You.",
+              paragraph: data.hero.paragraph || "Shang Properties, Inc. (SPI) has been involved in property investment and development in the Philippines since 1987 and was listed on the Philippine Stock Exchange (PSE) in 1991. Shang Properties' core businesses are office and retail leasing and residential development, as guided by its vision to be the leading developer and manager of prime properties in the Philippines."
+            });
+          }
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching hero content:", error);
+        setLoading(false);
+      }
+    );
+
+    // Clean up the listener on unmount
+    return () => unsubscribe();
+  }, []);
+  
+  // Construct full URL for the background image
+  const getBackgroundImageUrl = () => {
+    const { backgroundUrl } = heroContent;
+    
+    // If no background URL, return default hero background
+    if (!backgroundUrl) return DEFAULT_HERO_BG;
+    
+    // If it's already a full URL, return as is
+    try {
+      new URL(backgroundUrl);
+      return backgroundUrl;
+    } catch {
+      // If it's not a valid URL, treat as filename and prepend base URL
+      return `${DEFAULT_BASE_URL}${backgroundUrl}`;
+    }
+  };
+
+  // Process paragraph text for expand/collapse functionality
+  const fullText = heroContent.paragraph || "Shang Properties, Inc. (SPI) has been involved in property investment and development in the Philippines since 1987 and was listed on the Philippine Stock Exchange (PSE) in 1991. Shang Properties' core businesses are office and retail leasing and residential development, as guided by its vision to be the leading developer and manager of prime properties in the Philippines.";
   const shortText = fullText.slice(0, 164) + (fullText.length > 170 ? "..." : "");
   const [expanded, setExpanded] = useState(false);
 
@@ -19,7 +77,7 @@ const Hero: React.FC<HeroProps> = ({ imageRef }) => {
     >
       <motion.img
         ref={imageRef}
-        src={bgimg}
+        src={getBackgroundImageUrl()}
         alt="Hero"
         className="absolute inset-0 w-full h-full object-cover z-0 will-change-transform"
         initial={{ scale: 1.08, opacity: 0 }}
@@ -33,9 +91,10 @@ const Hero: React.FC<HeroProps> = ({ imageRef }) => {
           initial={{ opacity: 0, y: 80 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-        >
-          Curating Spaces <br className="hidden xs:block" /> as Fine As You.
-        </motion.h1>
+          dangerouslySetInnerHTML={{ 
+            __html: heroContent.headline || "Curating Spaces <br className=\"hidden xs:block\" /> as Fine As You." 
+          }}
+        />
         <motion.div
           className="mt-4 text-sm xs:text-base sm:text-lg max-w-3xl md:text-md text-center md:text-left text-[#c2b498]"
           initial={{ opacity: 0, y: 40 }}
