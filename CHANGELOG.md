@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.7.2](https://github.com/ShangProperties/ShangProperties/compare/v3.7.1...v3.7.2) (2025-09-04)
+
+
+### Bug Fixes
+
+* (admin) rewrite NavBar component and update routing structure ([cdff80f](https://github.com/ShangProperties/ShangProperties/commit/cdff80fa0cc4f83b9a9b137000b602c2b12be63f))
+* (admin) update sidebar links and routes ([bc67cbf](https://github.com/ShangProperties/ShangProperties/commit/bc67cbf1e256091181139eacca9476e7f37f1243))
+
 ### [3.7.1](https://github.com/ShangProperties/ShangProperties/compare/v3.7.0...v3.7.1) (2025-09-04)
 
 ## [3.7.0](https://github.com/ShangProperties/ShangProperties/compare/v3.6.1...v3.7.0) (2025-09-04)
