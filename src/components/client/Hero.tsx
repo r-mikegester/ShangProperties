@@ -17,7 +17,9 @@ const Hero: React.FC<HeroProps> = ({ imageRef }) => {
   const [loading, setLoading] = useState(true);
   
   // Default base URL for background images
-  const DEFAULT_BASE_URL = "https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/";
+  const DEFAULT_BASE_URL = "https://6ovgprfdguxo1bkn.public.blob.vercel-storage.com/";
+  // Default hero background image - using a working image from the project
+  const DEFAULT_HERO_BG = "https://6ovgprfdguxo1bkn.public.blob.vercel-storage.com/HeroBanner.webp";
 
   useEffect(() => {
     // Listen for real-time updates from Firestore
@@ -50,8 +52,8 @@ const Hero: React.FC<HeroProps> = ({ imageRef }) => {
   const getBackgroundImageUrl = () => {
     const { backgroundUrl } = heroContent;
     
-    // If no background URL, return default
-    if (!backgroundUrl) return DEFAULT_BASE_URL;
+    // If no background URL, return default hero background
+    if (!backgroundUrl) return DEFAULT_HERO_BG;
     
     // If it's already a full URL, return as is
     try {

@@ -4,13 +4,14 @@ import kuok from "../../assets/imgs/logo/others/KuokGroup-Logo.webp";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import Modal from "./Modal";
-import Login from "../auth/Login";
+import { useNavigate } from "react-router-dom";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { toast } from "react-toastify";
 import { db } from "../../firebase/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 const Footer = () => {
-    const [loginOpen, setLoginOpen] = useState(false);
+    const navigate = useNavigate();
     const [footerData, setFooterData] = useState<any>(null);
 
     useEffect(() => {
@@ -28,6 +29,31 @@ const Footer = () => {
 
         fetchFooterData();
     }, []);
+
+    const handleGoogleLogin = async () => {
+        const provider = new GoogleAuthProvider();
+        const auth = getAuth();
+        
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+            
+            // Log the login event
+            await addDoc(collection(db, "adminLogs"), {
+                type: "login",
+                userId: user.uid,
+                email: user.email,
+                timestamp: serverTimestamp(),
+                userAgent: navigator.userAgent
+            });
+            
+            // Redirect to admin dashboard after successful login
+            navigate("/Admin/Dashboard");
+        } catch (err: any) {
+            console.error("Login failed:", err);
+            toast.error("Login failed: " + (err.message || "Unknown error"));
+        }
+    };
 
     // Use default data if footerData is not loaded yet
     const data = footerData || {
@@ -79,13 +105,15 @@ const Footer = () => {
                                 <h3 className="text-white uppercase font-semibold">New Developments</h3>
                                 {data.links && data.links.length > 0 ? (
                                     data.links.map((link: any, idx: number) => (
-                                        <a
-                                            key={idx}
-                                            href={link.url}
-                                            className="block mt-2 text-sm text-white hover:underline"
-                                        >
-                                            {link.label}
-                                        </a>
+                                        link ? (
+                                            <a
+                                                key={idx}
+                                                href={link.url}
+                                                className="block mt-2 text-sm text-white hover:underline"
+                                            >
+                                                {link.label}
+                                            </a>
+                                        ) : null
                                     ))
                                 ) : (
                                     <>
@@ -102,15 +130,17 @@ const Footer = () => {
                                 <div className="mt-3 xs:w-40 w-full md:max-w-lg grid grid-cols-3 sm:grid-cols-6 px-6 md:grid-cols-2 gap-4 justify-center items-center">
                                     {data.socialLinks && data.socialLinks.length > 0 ? (
                                         data.socialLinks.map((social: any, idx: number) => (
-                                            <a 
-                                                key={idx} 
-                                                href={social.label === 'Email' && social.url ? `mailto:${social.url}` : (social.url || '#')}
-                                                className="flex justify-center items-center text-white hover:text-[#b08b2e] focus:outline-hidden focus:text-[#b08b2e]"
-                                                {...(!social.url ? { onClick: (e) => e.preventDefault() } : {})}
-                                            >
-                                                <Icon icon={social.icon} className="size-8" />
-                                                <span className="hidden md:inline ml-3">{social.label}</span>
-                                            </a>
+                                            social ? (
+                                                <a 
+                                                    key={idx} 
+                                                    href={social.label === 'Email' && social.url ? `mailto:${social.url}` : (social.url || '#')}
+                                                    className="flex justify-center items-center text-white hover:text-[#b08b2e] focus:outline-hidden focus:text-[#b08b2e]"
+                                                    {...(!social.url ? { onClick: (e) => e.preventDefault() } : {})}
+                                                >
+                                                    <Icon icon={social.icon} className="size-8" />
+                                                    <span className="hidden md:inline ml-3">{social.label}</span>
+                                                </a>
+                                            ) : null
                                         ))
                                     ) : (
                                         <>
@@ -149,7 +179,7 @@ const Footer = () => {
                                     <a className="inline-flex gap-x-2 text-gray-600 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" href={data.privacyUrl}>Privacy</a>
                                     <button
                                         className="inline-flex gap-x-2 text-neutral-400 hover:text-[#b08b2e] focus:outline-hidden focus:text-[#b08b2e] castoro-titling-regular bg-transparent border-none p-0 m-0 cursor-pointer"
-                                        onClick={() => setLoginOpen(true)}
+                                        onClick={handleGoogleLogin}
                                         type="button"
                                     >
                                         Admin
@@ -167,9 +197,6 @@ const Footer = () => {
                     </div>
                 </div>
             </motion.footer>
-            <Modal open={loginOpen} onClose={() => setLoginOpen(false)}>
-                <Login />
-            </Modal>
         </>
     );
 };

@@ -3,6 +3,8 @@ import { toast } from "react-toastify";
 import { put } from '@vercel/blob';
 import { useOutletContext } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { logChange } from "../../utils/changeLogger";
+import { Icon } from "@iconify/react";
 
 interface HeroContent {
   backgroundUrl: string;
@@ -22,13 +24,18 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [filename, setFilename] = useState<string>("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  // Add state for preview toggle
+  const [showPreview, setShowPreview] = useState(true);
+  // Add states for section toggles
+  const [showImageSection, setShowImageSection] = useState(true);
+  const [showContentSection, setShowContentSection] = useState(true);
 
   // Get the editing state from the outlet context
   const { isPageEditing } = useOutletContext<{ isPageEditing: boolean }>();
   const effectiveIsEditing = isEditing !== undefined ? isEditing : isPageEditing;
 
   // Default base URL for background images
-  const DEFAULT_BASE_URL = "https://frfgvl8jojjhk5cp.public.blob.vercel-storage.com/";
+  const DEFAULT_BASE_URL = "https://6ovgprfdguxo1bkn.public.blob.vercel-storage.com/";
 
   useEffect(() => {
     setData({
@@ -170,8 +177,10 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
     setSaving(true);
     try {
       await onSave(data);
+      await logChange("Hero", "UPDATE", data);
       toast.success("Hero section saved successfully!");
     } catch (error) {
+      await logChange("Hero", "UPDATE_ERROR", { error: (error as Error).message });
       toast.error("Failed to save hero section: " + (error as Error).message);
     } finally {
       setSaving(false);
@@ -337,50 +346,75 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
     <div className="flex flex-col lg:flex-row gap-6">
       {/* Live Preview - on top for mobile, on right for desktop */}
       <div className="border border-gray-200 rounded-lg w-full lg:w-1/2 bg-gray-50 lg:order-2">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Browser Mockup */}
-          <div className="flex items-center px-4 py-2 bg-gray-100 border-b">
-            <div className="flex space-x-1">
-              <div className="w-3 h-3 rounded-full bg-red-400"></div>
-              <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-              <div className="w-3 h-3 rounded-full bg-green-400"></div>
-            </div>
-            <div className="text-xs text-gray-500 ml-2">www.guidetoshangproperties.com</div>
-          </div>
-          
-          {/* Preview Content */}
-          <div className="relative min-h-[300px] w-full">
-            {/* Background with overlay */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${getFullImageUrl()})` }}
-            />
-            <div className="absolute inset-0 bg-black/70 bg-opacity-70" />
-            
-            {/* Content */}
-            <div className="absolute bottom-0 z-10 flex flex-col items-center justify-end w-full h-full p-4 sm:p-6 md:p-10 text-center">
-              <h1 
-                className="text-md sm:text-lg md:text-xl lg:text-2xl font-bold text-[#f4e3c1] drop-shadow-lg castoro-titling-regular leading-tight mb-4"
-                dangerouslySetInnerHTML={{ 
-                  __html: data.headline || "Curating Spaces <br className=\"hidden sm:block\" /> as Fine As You." 
-                }}
-              />
-              <div className="text-xs sm:text-xs md:text-xs max-w-2xl text-[#c2b498]">
-                {/* Paragraph with continue reading functionality */}
-                {data.paragraph && data.paragraph.length > 100 ? (
-                  <>
-                    {data.paragraph.slice(0, 100)}
-                    <span className="ml-2 text-[#b08b2e] underline cursor-pointer select-none">
-                      ... Continue reading
-                    </span>
-                  </>
-                ) : (
-                  data.paragraph || "Shang Properties, Inc. (SPI) has been involved in property investment and development in the Philippines since 1987 and was listed on the Philippine Stock Exchange (PSE) in 1991."
-                )}
-              </div>
-            </div>
-          </div>
+        <div className="flex justify-between items-center px-4 py-2 bg-gray-100 border-b">
+          <h3 className="font-semibold text-[#b08b2e]">Live Preview</h3>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowPreview(!showPreview)}
+            className="flex items-center gap-2 px-3 py-1 text-sm bg-[#b08b2e] text-white rounded-md"
+          >
+            <Icon icon={showPreview ? "mdi:eye-off" : "mdi:eye"} width="16" height="16" />
+            {showPreview ? "Hide" : "Show"} Preview
+          </motion.button>
         </div>
+        
+        <AnimatePresence>
+          {showPreview && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                {/* Browser Mockup */}
+                <div className="flex items-center px-4 py-2 bg-gray-100">
+                  <div className="flex space-x-1">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                  </div>
+                  <div className="text-xs text-gray-500 ml-2">www.guidetoshangproperties.com</div>
+                </div>
+                
+                {/* Preview Content */}
+                <div className="relative min-h-[300px] w-full">
+                  {/* Background with overlay */}
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${getFullImageUrl()})` }}
+                  />
+                  <div className="absolute inset-0 bg-black/70 bg-opacity-70" />
+                  
+                  {/* Content */}
+                  <div className="absolute bottom-0 z-10 flex flex-col items-center justify-end w-full h-full p-4 sm:p-6 md:p-10 text-center">
+                    <h1 
+                      className="text-md sm:text-lg md:text-xl lg:text-2xl font-bold text-[#f4e3c1] drop-shadow-lg castoro-titling-regular leading-tight mb-4"
+                      dangerouslySetInnerHTML={{ 
+                        __html: data.headline || "Curating Spaces <br className=\"hidden sm:block\" /> as Fine As You." 
+                      }}
+                    />
+                    <div className="text-xs sm:text-xs md:text-xs max-w-2xl text-[#c2b498]">
+                      {/* Paragraph with continue reading functionality */}
+                      {data.paragraph && data.paragraph.length > 100 ? (
+                        <>
+                          {data.paragraph.slice(0, 100)}
+                          <span className="ml-2 text-[#b08b2e] underline cursor-pointer select-none">
+                            ... Continue reading
+                          </span>
+                        </>
+                      ) : (
+                        data.paragraph || "Shang Properties, Inc. (SPI) has been involved in property investment and development in the Philippines since 1987 and was listed on the Philippine Stock Exchange (PSE) in 1991."
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Edit Form - on bottom for mobile, on left for desktop */}
@@ -391,40 +425,101 @@ const HeroEditor: React.FC<SectionEditorProps<HeroContent>> = ({ initialData, on
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <AnimatedFileUpload />
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Hero Section Management</h2>
+          <p className="text-gray-600 mb-6">
+            Manage the content of your hero section. Changes will be reflected on the homepage.
+          </p>
           
-          <AnimatedInput
-            id="filename"
-            label="Background Image Filename"
-            value={filename}
-            onChange={(e) => handleFilenameChange(e as React.ChangeEvent<HTMLInputElement>)}
-            placeholder="image.jpg"
-            readOnly={!effectiveIsEditing}
-          />
-          <p className="text-xs text-gray-500 mt-1 mb-6">Enter just the filename. It will be automatically prefixed with the default base URL.</p>
+          {/* Image Section */}
+          <div className="border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold text-lg text-gray-800">Background Image</h3>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowImageSection(!showImageSection)}
+                className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-md"
+              >
+                <Icon icon={showImageSection ? "mdi:chevron-up" : "mdi:chevron-down"} width="16" height="16" />
+                {showImageSection ? "Collapse" : "Expand"}
+              </motion.button>
+            </div>
+            
+            <AnimatePresence>
+              {showImageSection && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <AnimatedFileUpload />
+                  
+                  <AnimatedInput
+                    id="filename"
+                    label="Background Image Filename"
+                    value={filename}
+                    onChange={(e) => handleFilenameChange(e as React.ChangeEvent<HTMLInputElement>)}
+                    placeholder="image.jpg"
+                    readOnly={!effectiveIsEditing}
+                  />
+                  <p className="text-xs text-gray-500 mt-1 mb-6">Enter just the filename. It will be automatically prefixed with the default base URL.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           
-          <AnimatedInput
-            id="headline"
-            label="Headline (H1) - Supports HTML"
-            value={data.headline}
-            onChange={handleChange}
-            placeholder="Hero Headline"
-            textarea
-            rows={3}
-            readOnly={!effectiveIsEditing}
-          />
-          <p className="text-xs text-gray-500 mt-1 mb-6">Supports HTML tags like &lt;br&gt; for line breaks</p>
-          
-          <AnimatedInput
-            id="paragraph"
-            label="Paragraph"
-            value={data.paragraph}
-            onChange={handleChange}
-            placeholder="Hero paragraph text..."
-            textarea
-            rows={4}
-            readOnly={!effectiveIsEditing}
-          />
+          {/* Content Section */}
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold text-lg text-gray-800">Content Management</h3>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowContentSection(!showContentSection)}
+                className="flex items-center gap-2 px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-md"
+              >
+                <Icon icon={showContentSection ? "mdi:chevron-up" : "mdi:chevron-down"} width="16" height="16" />
+                {showContentSection ? "Collapse" : "Expand"}
+              </motion.button>
+            </div>
+            
+            <AnimatePresence>
+              {showContentSection && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <AnimatedInput
+                    id="headline"
+                    label="Headline (H1) - Supports HTML"
+                    value={data.headline}
+                    onChange={handleChange}
+                    placeholder="Hero Headline"
+                    textarea
+                    rows={3}
+                    readOnly={!effectiveIsEditing}
+                  />
+                  <p className="text-xs text-gray-500 mt-1 mb-6">Supports HTML tags like &lt;br&gt; for line breaks</p>
+                  
+                  <AnimatedInput
+                    id="paragraph"
+                    label="Paragraph"
+                    value={data.paragraph}
+                    onChange={handleChange}
+                    placeholder="Hero paragraph text..."
+                    textarea
+                    rows={4}
+                    readOnly={!effectiveIsEditing}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           
           <AnimatePresence>
             {effectiveIsEditing && (

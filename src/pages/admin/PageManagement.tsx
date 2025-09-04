@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import HeroEditor from "../../components/admin/HeroEditor";
 import ContactEditor from "../../components/admin/ContactEditor";
 import FooterEditor from "../../components/admin/FooterEditor";
+import SocialLinksEditor from "../../components/admin/SocialLinksEditor";
+import LoadingIndicator from "../../components/admin/LoadingIndicator";
 import { useOutletContext } from "react-router-dom";
 
 interface HomepageContent {
@@ -24,6 +26,9 @@ interface HomepageContent {
     viber: string;
     whatsapp: string;
     telegram: string;
+    headline: string;
+    subheading: string;
+    socialMediaHeading: string;
   };
   // Footer section
   footer: {
@@ -56,6 +61,9 @@ const initialContent: HomepageContent = {
     viber: "",
     whatsapp: "",
     telegram: "",
+    headline: "",
+    subheading: "",
+    socialMediaHeading: "",
   },
   footer: {
     logoUrl: "",
@@ -81,7 +89,7 @@ const initialContent: HomepageContent = {
 
 const PageManagement: React.FC = () => {
   const [content, setContent] = useState<HomepageContent>(initialContent);
-  const [activeTab, setActiveTab] = useState<"hero" | "contact" | "footer">("hero");
+  const [activeTab, setActiveTab] = useState<"hero" | "contact" | "footer" | "social">("hero");
   const [loading, setLoading] = useState(true);
   const [editedContent, setEditedContent] = useState<HomepageContent>(initialContent);
 
@@ -114,9 +122,7 @@ const PageManagement: React.FC = () => {
   useEffect(() => {
     const handleSave = () => {
       // Save all sections
-      handleSaveSection("hero", editedContent.hero);
-      handleSaveSection("contact", editedContent.contact);
-      handleSaveSection("footer", editedContent.footer);
+      handleSaveAll();
     };
 
     const handleCancel = () => {
@@ -132,13 +138,34 @@ const PageManagement: React.FC = () => {
     window.addEventListener('pageSaveRequested', handleSave);
     window.addEventListener('pageCancelRequested', handleCancel);
     window.addEventListener('pageRefreshRequested', handleRefresh);
-
+    
     return () => {
       window.removeEventListener('pageSaveRequested', handleSave);
       window.removeEventListener('pageCancelRequested', handleCancel);
       window.removeEventListener('pageRefreshRequested', handleRefresh);
     };
   }, [content, editedContent, fetchHomepage]);
+
+  // Deep equality function for comparing objects
+  const deepEqual = (obj1: any, obj2: any): boolean => {
+    if (obj1 === obj2) return true;
+    
+    if (obj1 == null || obj2 == null) return false;
+    
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') return obj1 === obj2;
+    
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    
+    if (keys1.length !== keys2.length) return false;
+    
+    for (const key of keys1) {
+      if (!keys2.includes(key)) return false;
+      if (!deepEqual(obj1[key], obj2[key])) return false;
+    }
+    
+    return true;
+  };
 
   const handleSaveSection = async (section: keyof HomepageContent, data: HomepageContent[keyof HomepageContent]) => {
     try {
@@ -152,33 +179,78 @@ const PageManagement: React.FC = () => {
       
       setEditedContent(updatedHomepage);
       setContent(updatedHomepage);
-      toast.success(`${section.charAt(0).toUpperCase() + section.slice(1)} section saved successfully!`);
+      return true;
     } catch (err: any) {
-      toast.error(`Failed to save ${section} section`);
       console.error(`Error saving ${section} section:`, err);
+      return false;
     }
   };
 
-  const handleEditorChange = (section: keyof HomepageContent, data: HomepageContent[keyof HomepageContent]) => {
+  const handleSaveAll = async () => {
+    // Compare current edited content with original content to find what has changed
+    const sectionsToSave: (keyof HomepageContent)[] = [];
+    
+    if (!deepEqual(content.hero, editedContent.hero)) {
+      sectionsToSave.push('hero');
+    }
+    
+    if (!deepEqual(content.contact, editedContent.contact)) {
+      sectionsToSave.push('contact');
+    }
+    
+    if (!deepEqual(content.footer, editedContent.footer)) {
+      sectionsToSave.push('footer');
+    }
+    
+    // If no changes detected
+    if (sectionsToSave.length === 0) {
+      toast.info("No changes to save");
+      return;
+    }
+    
+    let successfulSaves = 0;
+    
+    for (const section of sectionsToSave) {
+      const success = await handleSaveSection(section, editedContent[section]);
+      if (success) {
+        successfulSaves++;
+      }
+    }
+    
+    if (successfulSaves > 0) {
+      const sectionNames = sectionsToSave
+        .map(section => {
+          switch (section) {
+            case 'hero': return 'Hero';
+            case 'contact': return 'Contact';
+            case 'footer': return 'Footer';
+            default: return section;
+          }
+        })
+        .join(', ');
+      
+      toast.success(`Successfully saved changes to: ${sectionNames}`);
+    } else {
+      toast.error("Failed to save changes");
+    }
+  };
+
+  const handleEditorChange = useCallback((section: keyof HomepageContent, data: HomepageContent[keyof HomepageContent]) => {
     setEditedContent(prev => ({
       ...prev,
       [section]: data
     }));
-  };
+  }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-lg text-gray-600">Loading homepage content...</div>
-      </div>
-    );
+    return <LoadingIndicator message="Loading homepage content..." />;
   }
 
   return (
-    <div className="p-4 md:p-6 h-full overflow-y-auto">
-      <div className="mb-6">
+    <div className=" h-full overflow-y-auto">
+      <div className="mb-6 sticky top-0 bg-slate-50 z-40">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8">
+          <nav className="flex justify-center md:justify-start space-x-8 md:mx-3">
             <button
               onClick={() => setActiveTab("hero")}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -187,7 +259,7 @@ const PageManagement: React.FC = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Hero Section
+              Hero
             </button>
             <button
               onClick={() => setActiveTab("contact")}
@@ -197,7 +269,7 @@ const PageManagement: React.FC = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Contact Section
+              Contact
             </button>
             <button
               onClick={() => setActiveTab("footer")}
@@ -207,14 +279,24 @@ const PageManagement: React.FC = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Footer Section
+              Footer
+            </button>
+            <button
+              onClick={() => setActiveTab("social")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "social"
+                  ? "border-[#b08b2e] text-[#b08b2e]"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Social Links
             </button>
           </nav>
         </div>
       </div>
 
       {activeTab === "hero" && (
-        <div className="space-y-6">
+        <div className="p-3">
           <div className="pb-20">
             <HeroEditor
               initialData={editedContent.hero}
@@ -228,7 +310,7 @@ const PageManagement: React.FC = () => {
       )}
 
       {activeTab === "contact" && (
-        <div className="space-y-6">
+        <div className="p-3">
           <div className="pb-20">
             <ContactEditor
               initialData={editedContent.contact}
@@ -236,13 +318,14 @@ const PageManagement: React.FC = () => {
                 handleEditorChange("contact", data);
                 return Promise.resolve();
               }}
+              isEditing={isPageEditing}
             />
           </div>
         </div>
       )}
 
       {activeTab === "footer" && (
-        <div className="space-y-6">
+        <div className="p-3">
           <div className="pb-20">
             <FooterEditor
               initialData={editedContent.footer}
@@ -254,6 +337,15 @@ const PageManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {activeTab === "social" && (
+        <div className="p-3">
+          <div className="pb-20">
+            <SocialLinksEditor />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
