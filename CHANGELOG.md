@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.13.0](https://github.com/ShangProperties/ShangProperties/compare/v3.12.0...v3.13.0) (2025-09-04)
+
+
+### Features
+
+* (admin) implement sliding notifications panel and toast stack ([6ad7ec2](https://github.com/ShangProperties/ShangProperties/commit/6ad7ec2f728f346dd965b7b482de89b5bc3b6a14))
+
 ## [3.12.0](https://github.com/ShangProperties/ShangProperties/compare/v3.11.7...v3.12.0) (2025-09-04)
 
 
