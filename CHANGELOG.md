@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.8.0](https://github.com/ShangProperties/ShangProperties/compare/v3.7.2...v3.8.0) (2025-09-04)
+
+
+### Features
+
+* (admin) add settings page with change log and login history ([1f8b4dd](https://github.com/ShangProperties/ShangProperties/commit/1f8b4dd31876bc52868cb3af8b2896d57a7a440d))
+
 ### [3.7.2](https://github.com/ShangProperties/ShangProperties/compare/v3.7.1...v3.7.2) (2025-09-04)
 
 
