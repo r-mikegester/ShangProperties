@@ -8,27 +8,32 @@ const sidebarLinks = [
   {
     title: "Dashboard",
     icon: "solar:chat-square-2-broken",
-    path: ROUTE_PATHS.DASHBOARD,
+    path: ROUTE_PATHS.ADMIN_DASHBOARD,
   },
   {
     title: "Inquiries",
     icon: "solar:letter-broken",
-    path: ROUTE_PATHS.INQUIRIES,
+    path: ROUTE_PATHS.ADMIN_INQUIRIES,
   },
   {
     title: "Projects",
     icon: "solar:inbox-archive-broken",
-    path: ROUTE_PATHS.PROJECTS,
+    path: ROUTE_PATHS.ADMIN_PROJECTS,
   },
   {
     title: "Page Management",
     icon: "solar:feed-broken",
-    path: ROUTE_PATHS.PAGE_MANAGEMENT,
+    path: ROUTE_PATHS.ADMIN_PAGE_MANAGEMENT,
   },
+  // {
+  //   title: "Settings",
+  //   icon: "solar:settings-broken",
+  //   path: ROUTE_PATHS.ADMIN_SETTINGS,
+  // },
   {
-    title: "Settings",
-    icon: "solar:settings-broken",
-    path: ROUTE_PATHS.SETTINGS,
+    title: "Error Test",
+    icon: "solar:danger-triangle-broken",
+    path: ROUTE_PATHS.ADMIN_ERROR_TEST,
   },
 ];
 
@@ -109,7 +114,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
             <SmoothHoverMenuItem key={title}>
               <NavLink
                 to={path}
-                end={path === "/dashboard"}
+                end={path === "/Admin/Dashboard"}
                 className={({ isActive }) =>
                   open
                     ? `relative flex h-10 w-full items-center rounded-md px-2 transition-colors ${
@@ -145,7 +150,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         <div className="flex flex-col gap-1 mb-2">
           <SmoothHoverMenuItem>
             <NavLink
-              to={ROUTE_PATHS.SETTINGS}
+              to={ROUTE_PATHS.ADMIN_SETTINGS}
               className={
                 open
                   ? "relative flex h-10 w-full items-center rounded-md px-2 transition-colors text-[#b08b2e]"
