@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.7.0](https://github.com/ShangProperties/ShangProperties/compare/v3.6.1...v3.7.0) (2025-09-04)
+
+
+### Features
+
+* (admin) enhance inquiry handling and UI ([ec62594](https://github.com/ShangProperties/ShangProperties/commit/ec625945b89754bd5090f5135fbc15e5fb6aa9b5))
+* (components) revamp ContactEditor for enhanced functionality and UI ([8c6e247](https://github.com/ShangProperties/ShangProperties/commit/8c6e2470adfe811ec186054a9e19eaf2aa992acc))
+
 ### [3.6.1](https://github.com/ShangProperties/ShangProperties/compare/v3.6.0...v3.6.1) (2025-09-04)
 
 
