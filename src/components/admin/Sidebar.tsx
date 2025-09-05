@@ -17,11 +17,6 @@ const sidebarLinks = [
     path: "/Admin/Inquiries",
   },
   {
-    title: "Notifications",
-    icon: "solar:bell-broken",
-    path: "/Admin/Notifications",
-  },
-  {
     title: "Projects",
     icon: "solar:inbox-archive-broken",
     path: "/Admin/Projects",
