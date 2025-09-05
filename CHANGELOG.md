@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.13.1](https://github.com/ShangProperties/ShangProperties/compare/v3.13.0...v3.13.1) (2025-09-05)
+
+
+### Bug Fixes
+
+* refactor(admin) remove notifications link from sidebar ([f27857c](https://github.com/ShangProperties/ShangProperties/commit/f27857ce14e03867f8f06a55c7002372f4ccb2e9))
+
 ## [3.13.0](https://github.com/ShangProperties/ShangProperties/compare/v3.12.0...v3.13.0) (2025-09-04)
 
 
