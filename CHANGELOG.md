@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.14.0](https://github.com/ShangProperties/ShangProperties/compare/v3.13.2...v3.14.0) (2025-09-14)
+
+
+### Features
+
+* enhance backend functionality with Firebase integration and API improvements ([f0e0d6c](https://github.com/ShangProperties/ShangProperties/commit/f0e0d6c1973b28407f0a42e38ec7e7a373ad9830))
+
+
+### Bug Fixes
+
+* update stylesheet path in index.html ([fd99402](https://github.com/ShangProperties/ShangProperties/commit/fd99402ba1116bc052abeff625a39e9986926bdb))
+
 ### [3.13.2](https://github.com/ShangProperties/ShangProperties/compare/v3.13.1...v3.13.2) (2025-09-13)
 
 ### [3.13.1](https://github.com/ShangProperties/ShangProperties/compare/v3.13.0...v3.13.1) (2025-09-05)
