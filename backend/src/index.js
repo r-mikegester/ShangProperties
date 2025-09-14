@@ -26,9 +26,21 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Log all requests
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
+
 // Routes
 app.use('/api/inquiry', inquiryRoutes);
 app.use('/api/admin/analytics', analyticsRoutes);
+
+// Catch-all for debugging
+app.use('/api/*', (req, res) => {
+  console.log(`API route not found: ${req.method} ${req.url}`);
+  res.status(404).json({ success: false, error: `API route not found: ${req.url}` });
+});
 
 app.get('/', (req, res) => {
   res.send('ShangProperties Backend is running.');

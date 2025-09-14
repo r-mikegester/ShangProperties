@@ -21,6 +21,22 @@ const Login = () => {
       
       console.log("User signed in:", user);
       
+      // Check if user is authorized
+      const allowedEmails = [
+        'guidetoshangproperties@gmail.com',
+        'mikegester.sabuga023@gmail.com'
+      ];
+      
+      if (!allowedEmails.includes(user.email || '')) {
+        // User is authenticated but not authorized
+        toast.error("Access denied. Only authorized administrators can access this page.");
+        // Sign out the user since they're not authorized
+        await auth.signOut();
+        // Redirect to home page
+        navigate("/", { replace: true });
+        return;
+      }
+      
       // Log the login event
       await addDoc(collection(db, "adminLogs"), {
         type: "login",
@@ -59,8 +75,10 @@ const Login = () => {
         </button>
         {error && <div className="text-red-500 text-sm text-center mb-2">{error}</div>}
         <div className="mt-4 text-sm text-gray-500 text-center">
-          <p>Make sure you're using an authorized admin email address.</p>
-          <p className="mt-2">Current authorized emails: guidetoshangproperties@gmail.com</p>
+          <p>Only authorized administrators can access the dashboard.</p>
+          <p className="mt-2">Authorized emails:</p>
+          <p>guidetoshangproperties@gmail.com</p>
+          <p>mikegester.sabuga023@gmail.com</p>
         </div>
       </div>
     </div>

@@ -114,15 +114,29 @@ const Contact = () => {
       if (isMobile) setMobileStep(1); // Ensure stepper stays open on mobile
     } catch (err: any) {
       toast.dismiss();
-      if (err.response && err.response.data && err.response.data.error) {
-        toast.error(`Error: ${err.response.data.error}`);
+      console.error('Inquiry submit error:', err);
+      
+      // More detailed error handling
+      let errorMessage = 'Failed to submit inquiry. Please try again later.';
+      
+      if (err.response) {
+        // Server responded with error status
+        if (err.response.data && err.response.data.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.status) {
+          errorMessage = `Server error ${err.response.status}: ${err.response.statusText}`;
+        }
+      } else if (err.request) {
+        // Request was made but no response received
+        errorMessage = 'Network error. Please check your connection and try again.';
       } else if (err.message) {
-        toast.error(`Error: ${err.message}`);
-      } else {
-        toast.error('Something Went Wrong Unfortunately!');
+        // Something else happened
+        errorMessage = err.message;
       }
+      
+      toast.error(`Error: ${errorMessage}`);
       // Log the full error object for debugging
-      console.error('Inquiry submit error:', err, JSON.stringify(err));
+      console.error('Inquiry submit error details:', JSON.stringify(err, null, 2));
     } finally {
       setSubmitting(false);
       setForm({

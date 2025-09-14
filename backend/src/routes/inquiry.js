@@ -3,6 +3,12 @@ import { handleInquiry, getInquiries, updateInquiry, deleteInquiry } from '../co
 
 const router = express.Router();
 
+// Log all requests to this route
+router.use((req, res, next) => {
+  console.log(`Inquiry route accessed: ${req.method} ${req.url}`);
+  next();
+});
+
 // CREATE
 router.post('/', handleInquiry);
 // READ ALL

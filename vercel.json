@@ -18,5 +18,22 @@
                 }
             ]
         }
+    ],
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/backend/src/index.js"
+        }
+    ],
+    "builds": [
+        {
+            "src": "backend/src/index.js",
+            "use": "@vercel/node",
+            "config": {
+                "includeFiles": [
+                    "backend/src/**"
+                ]
+            }
+        }
     ]
 }

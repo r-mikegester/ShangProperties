@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Public read access for homepage content
+    match /homepage/{document} {
+      allow read: if true;
+      allow write: if isAllowedUser();
+    }
+    
+    // Public read access for footer content
+    match /footer/{document} {
+      allow read: if true;
+      allow write: if isAllowedUser();
+    }
+    
+    // Public read access for projects
+    match /projects/{document} {
+      allow read: if true;
+      allow write: if isAllowedUser();
+    }
+    
+    // Restricted access for inquiries (admin only)
+    match /inquiries/{document} {
+      allow read, write: if isAllowedUser();
+    }
+    
+    // Admin logs - admin only
+    match /adminLogs/{document} {
+      allow read, write: if isAllowedUser();
+    }
+    
+    // Function to check if user is one of the allowed admin users
+    function isAllowedUser() {
+      return request.auth != null && 
+        (request.auth.token.email == 'guidetoshangproperties@gmail.com' ||
+         request.auth.token.email == 'mikegester.sabuga023@gmail.com');
+    }
+  }
+}

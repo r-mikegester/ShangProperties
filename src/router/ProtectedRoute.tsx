@@ -3,6 +3,7 @@ import LoadingScreen from "../components/shared/LoadingScreen";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
+import { toast } from "react-toastify";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -29,6 +30,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedEmails
       } else if (!allowedEmails.includes(firebaseUser.email || "")) {
         console.log("User not authorized, redirecting to home");
         console.log("User email:", firebaseUser.email);
+        toast.error("Access denied. Only authorized administrators can access this page.");
         navigate("/", { replace: true });
       } else {
         console.log("User authorized, allowing access");

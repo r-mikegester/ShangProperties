@@ -26,13 +26,9 @@ const AdminLogin = lazy(() => import("../components/auth/Login"));
 // Removed AssetUploader import
 
 // Set your allowed admin emails here
-// TODO: Update with your actual admin email addresses
 const ADMIN_EMAILS = [
   "guidetoshangproperties@gmail.com",
-  // Add your email here for testing:
-  // "your.email@example.com"  // <-- Replace with your actual email
-  // Example: "admin@shangproperties.com"
-  // For testing, you can temporarily add your email here
+  "mikegester.sabuga023@gmail.com"
 ];
 
 const AppRoutes = () => {
