@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.14.1](https://github.com/ShangProperties/ShangProperties/compare/v3.14.0...v3.14.1) (2025-09-14)
+
+
+### Bug Fixes
+
+* add Firebase admin SDK JSON files to .gitignore ([7b3826c](https://github.com/ShangProperties/ShangProperties/commit/7b3826c33a9f74fc3e78cd80628480850913bcaf))
+
 ## [3.14.0](https://github.com/ShangProperties/ShangProperties/compare/v3.13.2...v3.14.0) (2025-09-14)
 
 
