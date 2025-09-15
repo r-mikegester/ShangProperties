@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.14.2](https://github.com/ShangProperties/ShangProperties/compare/v3.14.1...v3.14.2) (2025-09-15)
+
+
+### Bug Fixes
+
+* correct DOCTYPE declaration and format meta tags in index.html ([2aae3a1](https://github.com/ShangProperties/ShangProperties/commit/2aae3a1d986440ccbcc8ca118ee19c1589d59ba0))
+* update routing configuration in vercel.json to correct destination paths ([9e1a1de](https://github.com/ShangProperties/ShangProperties/commit/9e1a1de1edda724b1ce00679d76e2c0ecfd34fbe))
+
 ### [3.14.1](https://github.com/ShangProperties/ShangProperties/compare/v3.14.0...v3.14.1) (2025-09-14)
 
 
