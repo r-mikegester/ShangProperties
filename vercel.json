@@ -19,6 +19,8 @@
             ]
         }
     ],
+
+    
     "rewrites": [
         {
             "source": "/api/(.*)",
